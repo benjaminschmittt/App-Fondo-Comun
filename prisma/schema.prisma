@@ -1,0 +1,111 @@
+// Portal de Clientes — Fondo Privado
+// Ver docs/portal-clientes-fondo-documento-tecnico.md para el diseño completo.
+//
+// Principio de diseño: guardamos solo lo que el admin realmente declara
+// (historico de valor_cuotaparte, movimientos de clientes, posiciones).
+// Todo lo demas (cuotapartes de un cliente, valor de su inversion,
+// evolucion) se DERIVA en el codigo a partir de estos datos.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MovementType {
+  aporte
+  retiro
+}
+
+enum ImportStatus {
+  ok
+  error
+}
+
+// Un cliente del fondo. Se vincula a su cuenta de login (Supabase Auth)
+// por email — no guardamos password ni datos de autenticacion aca.
+model Client {
+  id        String   @id @default(uuid()) @db.Uuid
+  clienteId String   @unique @map("cliente_id")
+  nombre    String
+  email     String   @unique
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  movements ClientMovement[]
+
+  @@map("clients")
+}
+
+// Historico del valor de la cuotaparte del fondo (una fila por fecha de corte).
+// Es la serie que se usa para calcular cuotapartes y valor de inversion
+// de cada cliente en cualquier fecha.
+model FundNav {
+  id              String   @id @default(uuid()) @db.Uuid
+  fecha           DateTime @unique @db.Date
+  valorCuotaparte Decimal  @map("valor_cuotaparte") @db.Decimal(18, 6)
+
+  @@map("fund_nav")
+}
+
+// Metadatos oficiales del fondo por fecha de corte (declarados por el admin,
+// validados contra la suma de posiciones al importar).
+model FundSnapshot {
+  id                 String   @id @default(uuid()) @db.Uuid
+  fecha              DateTime @unique @db.Date
+  valorTotalFondo    Decimal  @map("valor_total_fondo") @db.Decimal(18, 2)
+  cuotapartesTotales Decimal  @map("cuotapartes_totales") @db.Decimal(18, 6)
+
+  @@map("fund_snapshot")
+}
+
+// Posiciones del fondo en una fecha de corte. Informacion publica
+// para todos los clientes autenticados (no es privada por cliente).
+model Position {
+  id              String   @id @default(uuid()) @db.Uuid
+  fecha           DateTime @db.Date
+  ticker          String
+  nombre          String
+  tipoInstrumento String   @map("tipo_instrumento")
+  sector          String
+  cantidad        Decimal  @db.Decimal(18, 4)
+  precio          Decimal  @db.Decimal(18, 4)
+  valorMercado    Decimal  @map("valor_mercado") @db.Decimal(18, 2)
+
+  @@unique([fecha, ticker])
+  @@index([fecha])
+  @@map("positions")
+}
+
+// Aportes y retiros de un cliente. Las cuotapartes de cada movimiento
+// se calculan al vuelo (monto / valor_cuotaparte en esa fecha), no se guardan.
+model ClientMovement {
+  id       String       @id @default(uuid()) @db.Uuid
+  clientId String       @map("client_id") @db.Uuid
+  client   Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  fecha    DateTime     @db.Date
+  tipo     MovementType
+  monto    Decimal      @db.Decimal(18, 2)
+
+  @@index([clientId, fecha])
+  @@map("client_movements")
+}
+
+// Auditoria de cada importacion de Excel: quien, cuando, resultado.
+model ImportBatch {
+  id              String       @id @default(uuid()) @db.Uuid
+  archivoNombre   String       @map("archivo_nombre")
+  importadoPorId  String       @map("importado_por_id") @db.Uuid
+  importadoPorEmail String     @map("importado_por_email")
+  importadoEn     DateTime     @default(now()) @map("importado_en")
+  filasProcesadas Int          @map("filas_procesadas")
+  estado          ImportStatus
+  detalle         Json?
+
+  @@map("import_batches")
+}
