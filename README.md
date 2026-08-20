@@ -148,6 +148,51 @@ contamine los datos.
    `npx prisma migrate deploy` desde tu maquina (con `DIRECT_URL` apuntando a
    produccion) cada vez que agregues una migracion nueva, antes o despues del deploy.
 
+### Cargar variables de entorno: mejor por CLI que por la web
+
+La UI de Vercel para variables "Sensitive" tiene un problema real: **una vez guardado
+un valor, nunca se te vuelve a mostrar** (ni en la web ni con `vercel env pull`), ni
+siquiera para editarlo — el campo aparece con un placeholder de ejemplo en gris que es
+facil confundir con el valor real. Si algo se pega mal (un paste que corta a la mitad,
+o cae en el campo equivocado), no hay forma de notarlo desde la UI hasta que algo falla
+en produccion.
+
+Mas confiable: cargarlas por CLI, leyendo directo desde `.env.local` (sin tipear nada
+a mano):
+
+```bash
+npx vercel login
+npx vercel link                  # vincula esta carpeta al proyecto de Vercel
+
+# por cada variable y por cada ambiente (production, preview, development):
+printf '%s' "https://tu-proyecto.supabase.co" | npx vercel env add NEXT_PUBLIC_SUPABASE_URL production
+
+npx vercel deploy --prod         # redeploy con las variables nuevas
+```
+
+### Build falla en Vercel pero funciona local: `prisma generate`
+
+Si el build de Vercel falla sin encontrar el cliente de Prisma (`src/generated/prisma`),
+es porque el `postinstall` automatico de Prisma quedo bloqueado por el mecanismo
+`allow-scripts` de npm durante `npm install`. Por eso `package.json` corre
+`prisma generate` explicitamente como parte del script de `build` (no depende del
+postinstall automatico). Si en el futuro cambia el generator o el output path del
+schema, este es el primer lugar para revisar.
+
+### Emails (invitaciones, recuperar contraseña)
+
+Por defecto Supabase manda estos emails con un servicio de prueba muy limitado (unos
+pocos emails por hora) — anda bien para probar, no para invitar a varios clientes
+reales. Antes de usar la app en serio, configurá un SMTP propio en **Supabase →
+Authentication → Emails → SMTP Settings** (Resend, SendGrid, Postmark, etc.).
+
+### Backups
+
+Verificá en **Supabase → Project Settings → Backups** que nivel de backup automatico
+incluye tu plan actual — en el plan free puede ser limitado o no incluir point-in-time
+recovery. Antes de operar con dinero real, vale la pena confirmar esto y evaluar
+upgradear el plan si hace falta.
+
 ## Fase 2 (fuera del alcance del MVP)
 
 Ver la seccion 11 del documento tecnico: reportes en PDF, 2FA, calculo de rentabilidad
