@@ -49,7 +49,15 @@ export const getCurrentClient = cache(async () => {
 export async function requireClient() {
   const client = await getCurrentClient();
   if (!client) {
-    redirect("/login?error=sin-cliente");
+    // No redirigir a /login: un usuario autenticado en /login rebota a
+    // /dashboard (ver proxy.ts), lo que crearia un loop infinito con este
+    // mismo redirect. Los admins van a su panel; el resto, a una pagina
+    // dedicada que no es ruta privada (proxy.ts no la toca).
+    const user = await requireUser();
+    if (user.app_metadata?.role === "admin") {
+      redirect("/admin");
+    }
+    redirect("/sin-cliente");
   }
   return client;
 }
