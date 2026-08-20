@@ -19,11 +19,11 @@ export function InviteButton({ email }: { email: string }) {
         onClick={() => {
           setError(null);
           startTransition(async () => {
-            try {
-              await invitarCliente(email);
+            const result = await invitarCliente(email);
+            if (result.ok) {
               setDone(true);
-            } catch (e) {
-              setError(e instanceof Error ? e.message : "Error al invitar.");
+            } else {
+              setError(result.error);
             }
           });
         }}
