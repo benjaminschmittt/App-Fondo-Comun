@@ -2,6 +2,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "./auth";
+import { rendimientoFondo } from "@/lib/calculos";
 
 export const FONDO_DATA_TAG = "fondo-data";
 
@@ -15,10 +16,12 @@ export const FONDO_DATA_TAG = "fondo-data";
 export async function getFondoData() {
   await requireUser();
   const cached = await getFondoDataCached();
+  const navSeries = cached.navSeries.map((r) => ({ ...r, fecha: new Date(r.fecha) }));
   return {
     ...cached,
     fechaCorte: cached.fechaCorte ? new Date(cached.fechaCorte) : null,
-    navSeries: cached.navSeries.map((r) => ({ ...r, fecha: new Date(r.fecha) })),
+    navSeries,
+    rendimiento: rendimientoFondo(navSeries),
   };
 }
 

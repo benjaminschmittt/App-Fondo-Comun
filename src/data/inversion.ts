@@ -6,6 +6,7 @@ import {
   evolucionInversion,
   aportesNetos,
   cuotapartesDeMovimiento,
+  tirAnualizada,
 } from "@/lib/calculos";
 
 // DTO con TODO lo que el dashboard necesita del cliente autenticado.
@@ -33,6 +34,9 @@ export async function getMiInversion() {
   const valorActual = ultimo?.valorInversion ?? 0;
   const netos = aportesNetos(movements);
   const resultado = valorActual - netos;
+  const rentabilidadAnualizada = ultimo
+    ? tirAnualizada(movements, valorActual, ultimo.fecha)
+    : null;
 
   return {
     nombre: client.nombre,
@@ -41,6 +45,7 @@ export async function getMiInversion() {
     aportesNetos: netos,
     resultado,
     resultadoPct: netos > 0 ? resultado / netos : 0,
+    rentabilidadAnualizada,
     serie,
     movimientos: movements.map((m) => ({
       ...m,

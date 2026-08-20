@@ -59,6 +59,26 @@ function Kpi({
   );
 }
 
+function RendimientoStat({ label, valor }: { label: string; valor: number | null }) {
+  const color = valor == null ? C.muted : valor >= 0 ? C.pos : C.neg;
+  return (
+    <div className="text-center">
+      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>
+        {label}
+      </div>
+      <div
+        className="tnum"
+        style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 22, fontWeight: 600, color, marginTop: 4 }}
+      >
+        {valor == null ? "—" : pct(valor)}
+      </div>
+      {valor == null && (
+        <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2 }}>sin historico suficiente</div>
+      )}
+    </div>
+  );
+}
+
 function Card({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl p-5" style={{ background: "#fff", border: `1px solid ${C.line}` }}>
@@ -124,8 +144,16 @@ export function DashboardView({ data }: { data: MiInversion }) {
             style={{ gap: 6, marginTop: 6, fontSize: 13, color: data.resultado >= 0 ? C.goldSoft : "#fca5a5" }}
           >
             {data.resultado >= 0 ? <TrendingUp size={15} /> : <TrendingDown size={15} />}
-            {money(data.resultado)} ({pct(data.resultadoPct)})
+            {money(data.resultado)} ({pct(data.resultadoPct)} total)
           </div>
+          {data.rentabilidadAnualizada != null && (
+            <div
+              className="tnum"
+              style={{ marginTop: 4, fontSize: 11.5, color: "rgba(255,255,255,0.65)" }}
+            >
+              Rentabilidad anualizada (TIR): {pct(data.rentabilidadAnualizada)}
+            </div>
+          )}
         </div>
 
         <Kpi
@@ -150,6 +178,16 @@ export function DashboardView({ data }: { data: MiInversion }) {
           subColor={C.muted}
         />
       </div>
+
+      <Card title="Rendimiento del fondo">
+        <div className="grid grid-cols-3" style={{ gap: 16 }}>
+          <RendimientoStat label="Mensual" valor={data.fondo.rendimiento.mensual} />
+          <RendimientoStat label="Trimestral" valor={data.fondo.rendimiento.trimestral} />
+          <RendimientoStat label="Acumulado" valor={data.fondo.rendimiento.acumulado} />
+        </div>
+      </Card>
+
+      <div className="h-5" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         <Card title="Evolucion de tu inversion">
@@ -339,7 +377,7 @@ export function DashboardView({ data }: { data: MiInversion }) {
       </div>
 
       <div className="text-center" style={{ color: C.muted, fontSize: 11.5, marginTop: 28, lineHeight: 1.8 }}>
-        La rentabilidad mostrada es resultado simple (valor actual − aportes netos). No constituye asesoramiento financiero.
+        El rendimiento del fondo es Time-Weighted Return (TWR): no lo afectan los aportes/retiros de los clientes. Tu rentabilidad anualizada (TIR) sí considera cuándo aportaste cada peso. Ninguno constituye asesoramiento financiero.
       </div>
     </main>
   );
