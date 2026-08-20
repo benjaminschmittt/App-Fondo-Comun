@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireAdmin } from "@/data/auth";
 import { importExcel, type ImportResult } from "@/lib/excel/import";
+import { FONDO_DATA_TAG } from "@/data/fondo";
 
 export type UploadState = ImportResult | undefined;
 
@@ -28,6 +29,10 @@ export async function subirExcel(
   });
 
   if (result.ok) {
+    // updateTag (no revalidateTag): esta es una Server Action y queremos
+    // que la data quede fresca de inmediato, no "eventualmente" en la
+    // proxima visita (comportamiento por defecto de revalidateTag).
+    updateTag(FONDO_DATA_TAG);
     revalidatePath("/admin");
     revalidatePath("/dashboard");
   }
