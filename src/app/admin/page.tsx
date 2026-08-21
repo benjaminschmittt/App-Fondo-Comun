@@ -4,6 +4,7 @@ import { fechaLarga } from "@/lib/theme";
 import { SectionCard } from "@/components/section-card";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 import { InviteButton } from "./invite-button";
 
 type Cliente = Awaited<ReturnType<typeof prisma.client.findMany>>[number];
@@ -67,7 +68,10 @@ export default async function AdminPage() {
             </div>
           </div>
         ) : (
-          <p className="text-[13.5px] text-muted-foreground">Todavia no se importo ningun Excel.</p>
+          <EmptyState
+            title="Todavía no se importó ningún Excel"
+            description="Subí un archivo desde Importar Excel para cargar los datos del fondo."
+          />
         )}
       </SectionCard>
 

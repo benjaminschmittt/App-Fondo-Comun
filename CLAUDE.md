@@ -60,20 +60,35 @@ proyecto, desplegado en Vercel.
   automáticamente. **La UI todavía NO expone selección de fondo** — el
   dashboard resuelve el fondo default por consulta
   (`getDefaultFundId()` en `src/data/fondo.ts`), nunca un id hardcodeado.
-- **Rediseño Visual, Etapa V0:** shadcn/ui instalado (componentes propios en
-  `src/components/ui/`), paleta navy/dorado sistematizada como tokens reales
-  de Tailwind en `globals.css` (antes vivía suelta en `src/lib/theme.ts`,
-  usada solo inline). **Ninguna pantalla fue tocada todavía** — eso es
-  V1-V4, en curso.
+- **Rediseño Visual (V0→V6): completo.** shadcn/ui instalado (componentes
+  propios en `src/components/ui/`), tokens reales de Tailwind en
+  `globals.css` + espejados en `src/lib/theme.ts` (`CHART_COLORS` y
+  formatters — el objeto de color `C` que existía ahí se eliminó, quedó sin
+  uso cuando todas las pantallas migraron a clases de Tailwind).
+  **Paleta pivotada a mitad de rediseño:** ya no es navy/dorado — es
+  **azul noche `#0F172A` + petróleo `#0F766E`** (sin dorado), decidido tras
+  revisar referencias reales de wealth management (Addepar, J.P. Morgan
+  Private Bank). Los nombres de variable (`--navy`, `--gold` en
+  `globals.css`) quedaron como legado del sistema anterior — sus VALORES
+  son los nuevos, no te confundas si ves `bg-navy`/`text-gold` en el código.
+  Tipografía unificada a Inter (Fraunces descartada).
+  Componentes base nuevos en `src/components/`: `MetricCard`, `SectionCard`,
+  `DataTable`, `ChartCard`, `StatusBadge`, `EmptyState`, `UploadCard`
+  (drag-and-drop), `AdminShell` (sidebar real, `admin-sidebar.tsx`) y
+  `ClientTopbar` — reemplazan el `app-header.tsx` viejo (borrado) y las
+  cards/tablas caseras duplicadas por pantalla. Login, recuperar,
+  actualizar-password, 404, error, spinner, dashboard del cliente y panel
+  admin (listado + import Excel) ya están reescritos sobre estos
+  componentes. Verificado número por número contra los valores de antes del
+  rediseño — ningún cálculo cambió.
 
 ## Qué falta (ver el plan para el detalle etapa por etapa)
 
-En orden: Rediseño Visual V1→V4 (login/errores, navegación, dashboard
-cliente, panel admin) → Fase 3 Etapa 2 (Reportes PDF, con
-`@react-pdf/renderer`) → Etapa 3 (2FA, Supabase Auth MFA nativo) → Etapa 4
-(panel admin sin depender del Excel) → Etapa 5 (notificaciones por email,
-bloqueada por el dominio de Resend) → Etapa 6 (marca de agua/HWM, **solo
-diseño con ejemplos numéricos antes de programar nada**) → Etapa 7
+El rediseño visual (V0→V6) ya terminó. Sigue: Fase 3 Etapa 2 (Reportes PDF,
+con `@react-pdf/renderer`) → Etapa 3 (2FA, Supabase Auth MFA nativo) →
+Etapa 4 (panel admin sin depender del Excel) → Etapa 5 (notificaciones por
+email, bloqueada por el dominio de Resend) → Etapa 6 (marca de agua/HWM,
+**solo diseño con ejemplos numéricos antes de programar nada**) → Etapa 7
 (integración con broker, solo evaluación) → Etapa 8 (app mobile — **ya
 decidido: PWA**, no nativa).
 

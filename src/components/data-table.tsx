@@ -41,7 +41,7 @@ export function DataTable<T>({
             <TableHead
               key={col.key}
               className={cn(
-                "text-[11px] font-semibold tracking-wide text-muted-foreground uppercase",
+                "label-eyebrow text-muted-foreground",
                 col.align === "right" && "text-right"
               )}
             >

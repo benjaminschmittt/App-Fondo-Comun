@@ -30,7 +30,7 @@ function RendimientoStat({ label, valor }: { label: string; valor: number | null
     valor == null ? "text-muted-foreground" : valor >= 0 ? "text-pos" : "text-neg";
   return (
     <div className="text-center">
-      <div className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+      <div className="label-eyebrow text-muted-foreground">
         {label}
       </div>
       <div className={cn("tnum mt-1 font-heading text-xl font-semibold", toneClass)}>
@@ -229,6 +229,8 @@ export function DashboardView({ data }: { data: MiInversion }) {
               {(["tipo", "sector"] as const).map((b) => (
                 <button
                   key={b}
+                  type="button"
+                  aria-pressed={breakdown === b}
                   onClick={() => setBreakdown(b)}
                   className={cn(
                     "rounded-md px-3 py-1 text-xs font-semibold capitalize transition-colors",

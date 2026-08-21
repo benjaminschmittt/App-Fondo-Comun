@@ -1,6 +1,6 @@
 import { requireUser } from "@/data/auth";
 import { logout } from "@/app/actions";
-import { C } from "@/lib/theme";
+import { Button } from "@/components/ui/button";
 
 // Pagina de destino para un usuario autenticado que no tiene (o ya no
 // tiene) un cliente activo vinculado a su email. No es una ruta privada
@@ -10,62 +10,23 @@ export default async function SinClientePage() {
   await requireUser();
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-5"
-      style={{ background: C.surface }}
-    >
-      <div className="text-center" style={{ maxWidth: 400 }}>
-        <div
-          className="flex items-center justify-center mx-auto mb-5"
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: "50%",
-            border: `1.5px solid ${C.gold}`,
-            background: "#fff",
-          }}
-        >
-          <span
-            style={{
-              fontFamily: "var(--font-fraunces), serif",
-              fontSize: 26,
-              fontWeight: 600,
-              color: C.navy,
-            }}
-          >
+    <div className="flex min-h-screen items-center justify-center bg-background p-5">
+      <div className="max-w-100 text-center">
+        <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full border-[1.5px] border-gold bg-card">
+          <span className="font-heading text-2xl font-semibold text-navy">
             F
           </span>
         </div>
-        <h1
-          style={{
-            fontFamily: "var(--font-fraunces), serif",
-            fontSize: 20,
-            color: C.ink,
-            marginBottom: 8,
-          }}
-        >
+        <h1 className="mb-2 font-heading text-xl text-ink">
           Tu cuenta no tiene una inversión vinculada
         </h1>
-        <p style={{ color: C.muted, fontSize: 14, marginBottom: 24 }}>
+        <p className="mb-6 text-sm text-muted-foreground">
           Esta cuenta inició sesión correctamente, pero no está asociada a
           ningún cliente activo del fondo. Contactá al administrador si
           pensás que esto es un error.
         </p>
         <form action={logout}>
-          <button
-            type="submit"
-            className="rounded-lg"
-            style={{
-              background: C.navy,
-              color: "#fff",
-              padding: "10px 22px",
-              fontWeight: 600,
-              fontSize: 14,
-              border: "none",
-            }}
-          >
-            Cerrar sesión
-          </button>
+          <Button type="submit">Cerrar sesión</Button>
         </form>
       </div>
     </div>

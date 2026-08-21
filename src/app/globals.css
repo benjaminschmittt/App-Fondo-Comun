@@ -80,6 +80,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Label chico en mayúscula (KPI, encabezado de tabla, stat) — el color
+   queda a cargo de quien la usa, varía según fondo claro/oscuro. */
+.label-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
 .fade-up {
   animation: fadeUp 0.45s ease both;
 }

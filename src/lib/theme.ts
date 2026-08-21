@@ -1,26 +1,10 @@
-// Paleta y formatters compartidos. Los VALORES tienen que quedar
-// identicos a los custom properties de src/app/globals.css (fuente de
-// verdad del sistema de diseño, ver plan del rediseño visual) — este
-// objeto existe para los pocos lugares que necesitan un string de color
-// en JS (Recharts/SVG no aceptan clases de Tailwind). Pantallas nuevas
-// (rediseño V1+) usan las utilidades de Tailwind (bg-navy, text-gold,
-// etc.) en vez de importar C directamente.
-export const C = {
-  navy: "#0f172a",
-  navyDeep: "#1e293b",
-  navyDeeper: "#060b14",
-  gold: "#0f766e",
-  goldSoft: "#5eead4",
-  ink: "#111827",
-  muted: "#6b7280",
-  line: "#e5e7eb",
-  surface: "#f7f8fa",
-  pos: "#15803d",
-  neg: "#b91c1c",
-  warn: "#b45309",
-} as const;
-
-// Espeja --chart-1..5 de globals.css.
+// Formatters compartidos + paleta de gráficos. Los valores de
+// CHART_COLORS tienen que quedar identicos a --chart-1..5 de
+// src/app/globals.css (fuente de verdad del sistema de diseño) —
+// Recharts/SVG necesitan un string de color en JS, no aceptan clases
+// de Tailwind. El resto de la app usa las utilidades de Tailwind
+// (bg-navy, text-gold, etc., ver comentario en globals.css sobre esos
+// nombres historicos) en vez de un objeto de color en JS.
 export const CHART_COLORS = [
   "#0f172a", // chart-1 / navy
   "#0f766e", // chart-2 / gold (petroleo)

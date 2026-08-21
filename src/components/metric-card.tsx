@@ -35,7 +35,7 @@ export function MetricCard({
     >
       <div
         className={cn(
-          "flex items-center gap-2 text-[11px] font-semibold tracking-wide uppercase",
+          "label-eyebrow flex items-center gap-2",
           hero ? "text-primary-foreground/65" : "text-muted-foreground"
         )}
       >
@@ -49,7 +49,7 @@ export function MetricCard({
         <div
           className={cn(
             "tnum mt-1.5 text-[13px]",
-            hero ? "text-accent" : SUB_TONE_CLASS[subTone]
+            hero ? "text-gold-soft" : SUB_TONE_CLASS[subTone]
           )}
         >
           {sub}
