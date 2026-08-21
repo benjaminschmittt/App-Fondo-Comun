@@ -15,8 +15,9 @@ export type ImportError = {
 };
 
 export type ValidatedData = {
-  navRows: { fecha: Date; valorCuotaparte: number }[];
+  navRows: { fondo: string; fecha: Date; valorCuotaparte: number }[];
   positions: {
+    fondo: string;
     fecha: Date;
     ticker: string;
     nombre: string;
@@ -26,9 +27,9 @@ export type ValidatedData = {
     precio: number;
     valorMercado: number;
   }[];
-  snapshots: { fecha: Date; valorTotalFondo: number; cuotapartesTotales: number }[];
+  snapshots: { fondo: string; fecha: Date; valorTotalFondo: number; cuotapartesTotales: number }[];
   clients: { clienteId: string; nombre: string; email: string; activo: boolean }[];
-  movements: { clienteId: string; fecha: Date; tipo: "aporte" | "retiro"; monto: number }[];
+  movements: { fondo: string; clienteId: string; fecha: Date; tipo: "aporte" | "retiro"; monto: number }[];
 };
 
 export type ValidationResult =
@@ -37,6 +38,13 @@ export type ValidationResult =
 
 function dayKey(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+// Clave compuesta fondo+fecha: a partir de Fase 3 el mismo dia puede
+// repetirse en fondos distintos, asi que fecha sola ya no alcanza para
+// identificar un corte de forma unica.
+function fondoFechaKey(fondo: string, fecha: Date): string {
+  return `${fondo}|${dayKey(fecha)}`;
 }
 
 // Parsea una hoja fila por fila con su schema de zod, acumulando errores
@@ -78,24 +86,24 @@ export function validateWorkbook(wb: ParsedWorkbook): ValidationResult {
   const clientesRaw = parseSheet("clientes", wb.clientes, ClienteRow, errors);
   const movimientosRaw = parseSheet("movimientos", wb.movimientos, MovimientoRow, errors);
 
-  // --- valor_cuotaparte: fechas unicas ---
-  const navByDate = new Map<string, number>();
+  // --- valor_cuotaparte: (fondo, fecha) unicos ---
+  const navByKey = new Map<string, number>();
   {
     const seen = new Map<string, number>();
     for (let i = 0; i < navRowsRaw.length; i++) {
       const row = navRowsRaw[i];
-      const key = dayKey(row.fecha);
+      const key = fondoFechaKey(row.fondo, row.fecha);
       if (seen.has(key)) {
         errors.push({
           hoja: "valor_cuotaparte",
           fila: wb.valorCuotaparte[i].row,
           columna: "fecha",
-          motivo: `Fecha duplicada (ya definida en la fila ${seen.get(key)}).`,
+          motivo: `Fecha duplicada para este fondo (ya definida en la fila ${seen.get(key)}).`,
         });
         continue;
       }
       seen.set(key, wb.valorCuotaparte[i].row);
-      navByDate.set(key, row.valor_cuotaparte);
+      navByKey.set(key, row.valor_cuotaparte);
     }
   }
 
@@ -145,22 +153,23 @@ export function validateWorkbook(wb: ParsedWorkbook): ValidationResult {
     }
   }
 
-  // --- posiciones: fecha debe existir en valor_cuotaparte; ticker unico por fecha ---
+  // --- posiciones: (fondo, fecha) debe existir en valor_cuotaparte;
+  //     ticker unico por fondo+fecha ---
   const positions: ValidatedData["positions"] = [];
-  const totalPorFecha = new Map<string, number>();
+  const totalPorKey = new Map<string, number>();
   {
     const seenTickerFecha = new Set<string>();
     for (let i = 0; i < posicionesRaw.length; i++) {
       const row = posicionesRaw[i];
       const excelRow = wb.posiciones[i].row;
-      const key = dayKey(row.fecha);
+      const key = fondoFechaKey(row.fondo, row.fecha);
 
-      if (!navByDate.has(key)) {
+      if (!navByKey.has(key)) {
         errors.push({
           hoja: "posiciones",
           fila: excelRow,
           columna: "fecha",
-          motivo: `No hay un valor de cuotaparte definido para esta fecha en la hoja "valor_cuotaparte".`,
+          motivo: `No hay un valor de cuotaparte definido para esta fecha (y fondo) en la hoja "valor_cuotaparte".`,
         });
         continue;
       }
@@ -171,15 +180,16 @@ export function validateWorkbook(wb: ParsedWorkbook): ValidationResult {
           hoja: "posiciones",
           fila: excelRow,
           columna: "ticker",
-          motivo: `Ticker duplicado para la misma fecha de corte.`,
+          motivo: `Ticker duplicado para la misma fecha de corte (y fondo).`,
         });
         continue;
       }
       seenTickerFecha.add(tickerKey);
 
       const valorMercado = row.cantidad * row.precio;
-      totalPorFecha.set(key, (totalPorFecha.get(key) ?? 0) + valorMercado);
+      totalPorKey.set(key, (totalPorKey.get(key) ?? 0) + valorMercado);
       positions.push({
+        fondo: row.fondo,
         fecha: row.fecha,
         ticker: row.ticker.toUpperCase(),
         nombre: row.nombre,
@@ -192,34 +202,35 @@ export function validateWorkbook(wb: ParsedWorkbook): ValidationResult {
     }
   }
 
-  // --- fondo: fecha unica, debe existir en valor_cuotaparte y coincidir,
-  //     y el total declarado debe coincidir con la suma de posiciones ---
+  // --- fondo: (fondo, fecha) unico, debe existir en valor_cuotaparte y
+  //     coincidir, y el total declarado debe coincidir con la suma de
+  //     posiciones de ese mismo fondo ---
   const snapshots: ValidatedData["snapshots"] = [];
   {
-    const seenFechas = new Map<string, number>();
+    const seenKeys = new Map<string, number>();
     for (let i = 0; i < fondoRaw.length; i++) {
       const row = fondoRaw[i];
       const excelRow = wb.fondo[i].row;
-      const key = dayKey(row.fecha);
+      const key = fondoFechaKey(row.fondo, row.fecha);
 
-      if (seenFechas.has(key)) {
+      if (seenKeys.has(key)) {
         errors.push({
           hoja: "fondo",
           fila: excelRow,
           columna: "fecha",
-          motivo: `Fecha duplicada (ya definida en la fila ${seenFechas.get(key)}).`,
+          motivo: `Fecha duplicada para este fondo (ya definida en la fila ${seenKeys.get(key)}).`,
         });
         continue;
       }
-      seenFechas.set(key, excelRow);
+      seenKeys.set(key, excelRow);
 
-      const navEsperado = navByDate.get(key);
+      const navEsperado = navByKey.get(key);
       if (navEsperado == null) {
         errors.push({
           hoja: "fondo",
           fila: excelRow,
           columna: "fecha",
-          motivo: `No hay un valor de cuotaparte definido para esta fecha en la hoja "valor_cuotaparte".`,
+          motivo: `No hay un valor de cuotaparte definido para esta fecha (y fondo) en la hoja "valor_cuotaparte".`,
         });
         continue;
       }
@@ -232,13 +243,13 @@ export function validateWorkbook(wb: ParsedWorkbook): ValidationResult {
         });
       }
 
-      const totalPosiciones = totalPorFecha.get(key);
+      const totalPosiciones = totalPorKey.get(key);
       if (totalPosiciones == null) {
         errors.push({
           hoja: "fondo",
           fila: excelRow,
           columna: "valor_total_fondo",
-          motivo: `No hay posiciones cargadas en la hoja "posiciones" para esta fecha de corte.`,
+          motivo: `No hay posiciones cargadas en la hoja "posiciones" para esta fecha de corte (y fondo).`,
         });
       } else if (
         Math.abs(row.valor_total_fondo - totalPosiciones) / totalPosiciones >
@@ -253,6 +264,7 @@ export function validateWorkbook(wb: ParsedWorkbook): ValidationResult {
       }
 
       snapshots.push({
+        fondo: row.fondo,
         fecha: row.fecha,
         valorTotalFondo: row.valor_total_fondo,
         cuotapartesTotales: row.cuotapartes_totales,
@@ -260,7 +272,7 @@ export function validateWorkbook(wb: ParsedWorkbook): ValidationResult {
     }
   }
 
-  // --- movimientos: cliente_id debe existir, fecha debe tener NAV definido ---
+  // --- movimientos: cliente_id debe existir, (fondo, fecha) debe tener NAV definido ---
   const movements: ValidatedData["movements"] = [];
   for (let i = 0; i < movimientosRaw.length; i++) {
     const row = movimientosRaw[i];
@@ -275,17 +287,18 @@ export function validateWorkbook(wb: ParsedWorkbook): ValidationResult {
       });
       continue;
     }
-    if (!navByDate.has(dayKey(row.fecha))) {
+    if (!navByKey.has(fondoFechaKey(row.fondo, row.fecha))) {
       errors.push({
         hoja: "movimientos",
         fila: excelRow,
         columna: "fecha",
-        motivo: `No hay un valor de cuotaparte definido para esta fecha en la hoja "valor_cuotaparte".`,
+        motivo: `No hay un valor de cuotaparte definido para esta fecha (y fondo) en la hoja "valor_cuotaparte".`,
       });
       continue;
     }
 
     movements.push({
+      fondo: row.fondo,
       clienteId: row.cliente_id,
       fecha: row.fecha,
       tipo: row.tipo,
@@ -293,10 +306,10 @@ export function validateWorkbook(wb: ParsedWorkbook): ValidationResult {
     });
   }
 
-  const navRows = [...navByDate.entries()].map(([key, valorCuotaparte]) => ({
-    fecha: new Date(key),
-    valorCuotaparte,
-  }));
+  const navRows = [...navByKey.entries()].map(([key, valorCuotaparte]) => {
+    const [fondo, fechaStr] = key.split("|");
+    return { fondo, fecha: new Date(fechaStr), valorCuotaparte };
+  });
 
   if (errors.length > 0) {
     return { ok: false, errors };

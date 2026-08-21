@@ -18,7 +18,7 @@ export async function getMiInversion() {
   const fondo = await getFondoData();
 
   const movementRows = await prisma.clientMovement.findMany({
-    where: { clientId: client.id },
+    where: { clientId: client.id, fundId: fondo.fundId },
     orderBy: { fecha: "asc" },
   });
 

@@ -26,6 +26,26 @@ enum ImportStatus {
   error
 }
 
+// Un fondo. Fase 1-2 asumian un solo fondo implicito; a partir de Fase 3
+// el esquema es multi-fondo, pero la UI todavia no lo expone (todo sigue
+// apuntando al "Fondo Principal" sembrado en la migracion). Ver Etapa 1
+// del roadmap de Fase 3.
+model Fund {
+  id          String   @id @default(uuid()) @db.Uuid
+  nombre      String
+  descripcion String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  navRows     FundNav[]
+  snapshots   FundSnapshot[]
+  positions   Position[]
+  movements   ClientMovement[]
+  clientFunds ClientFund[]
+
+  @@map("funds")
+}
+
 // Un cliente del fondo. Se vincula a su cuenta de login (Supabase Auth)
 // por email — no guardamos password ni datos de autenticacion aca.
 model Client {
@@ -37,37 +57,61 @@ model Client {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  movements ClientMovement[]
+  movements   ClientMovement[]
+  clientFunds ClientFund[]
 
   @@map("clients")
 }
 
-// Historico del valor de la cuotaparte del fondo (una fila por fecha de corte).
-// Es la serie que se usa para calcular cuotapartes y valor de inversion
-// de cada cliente en cualquier fecha.
+// Que clientes pertenecen a que fondos (un cliente puede estar en mas de
+// uno). Todavia no la consume ninguna pantalla — existe para no tener que
+// migrar de nuevo cuando la UI multi-fondo llegue.
+model ClientFund {
+  id        String   @id @default(uuid()) @db.Uuid
+  clientId  String   @map("client_id") @db.Uuid
+  fundId    String   @map("fund_id") @db.Uuid
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  fund      Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([clientId, fundId])
+  @@map("client_funds")
+}
+
+// Historico del valor de la cuotaparte de un fondo (una fila por fondo y
+// fecha de corte). Es la serie que se usa para calcular cuotapartes y
+// valor de inversion de cada cliente en cualquier fecha.
 model FundNav {
   id              String   @id @default(uuid()) @db.Uuid
-  fecha           DateTime @unique @db.Date
+  fundId          String   @map("fund_id") @db.Uuid
+  fund            Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  fecha           DateTime @db.Date
   valorCuotaparte Decimal  @map("valor_cuotaparte") @db.Decimal(18, 6)
 
+  @@unique([fundId, fecha])
   @@map("fund_nav")
 }
 
-// Metadatos oficiales del fondo por fecha de corte (declarados por el admin,
-// validados contra la suma de posiciones al importar).
+// Metadatos oficiales de un fondo por fecha de corte (declarados por el
+// admin, validados contra la suma de posiciones al importar).
 model FundSnapshot {
   id                 String   @id @default(uuid()) @db.Uuid
-  fecha              DateTime @unique @db.Date
+  fundId             String   @map("fund_id") @db.Uuid
+  fund               Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  fecha              DateTime @db.Date
   valorTotalFondo    Decimal  @map("valor_total_fondo") @db.Decimal(18, 2)
   cuotapartesTotales Decimal  @map("cuotapartes_totales") @db.Decimal(18, 6)
 
+  @@unique([fundId, fecha])
   @@map("fund_snapshot")
 }
 
-// Posiciones del fondo en una fecha de corte. Informacion publica
-// para todos los clientes autenticados (no es privada por cliente).
+// Posiciones de un fondo en una fecha de corte. Informacion publica para
+// todos los clientes de ese fondo (no es privada por cliente).
 model Position {
   id              String   @id @default(uuid()) @db.Uuid
+  fundId          String   @map("fund_id") @db.Uuid
+  fund            Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
   fecha           DateTime @db.Date
   ticker          String
   nombre          String
@@ -77,22 +121,26 @@ model Position {
   precio          Decimal  @db.Decimal(18, 4)
   valorMercado    Decimal  @map("valor_mercado") @db.Decimal(18, 2)
 
-  @@unique([fecha, ticker])
-  @@index([fecha])
+  @@unique([fundId, fecha, ticker])
+  @@index([fundId, fecha])
   @@map("positions")
 }
 
-// Aportes y retiros de un cliente. Las cuotapartes de cada movimiento
-// se calculan al vuelo (monto / valor_cuotaparte en esa fecha), no se guardan.
+// Aportes y retiros de un cliente en un fondo. Las cuotapartes de cada
+// movimiento se calculan al vuelo (monto / valor_cuotaparte en esa fecha),
+// no se guardan.
 model ClientMovement {
   id       String       @id @default(uuid()) @db.Uuid
   clientId String       @map("client_id") @db.Uuid
   client   Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  fundId   String       @map("fund_id") @db.Uuid
+  fund     Fund         @relation(fields: [fundId], references: [id], onDelete: Cascade)
   fecha    DateTime     @db.Date
   tipo     MovementType
   monto    Decimal      @db.Decimal(18, 2)
 
   @@index([clientId, fecha])
+  @@index([fundId, fecha])
   @@map("client_movements")
 }
 

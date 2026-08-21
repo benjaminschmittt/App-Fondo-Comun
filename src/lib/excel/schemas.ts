@@ -21,9 +21,22 @@ const aporte_retiro = z
   .transform((s) => s.toLowerCase())
   .pipe(z.enum(["aporte", "retiro"], { error: 'Debe ser "aporte" o "retiro".' }));
 
+// Columna "fondo" opcional (Fase 3, Etapa 1): si se omite, la fila se
+// asigna al fondo default en el momento de importar (ver import.ts). No
+// se resuelve nombre -> id aca porque este archivo no toca la base de
+// datos — validate.ts sigue siendo puro/sincrono a proposito.
+export const DEFAULT_FONDO_SENTINEL = "__default__";
+
+const fondoOpcional = z
+  .string()
+  .trim()
+  .nullish()
+  .transform((s) => (s && s.length > 0 ? s : DEFAULT_FONDO_SENTINEL));
+
 export const ValorCuotaparteRow = z.object({
   fecha,
   valor_cuotaparte: numeroPositivo,
+  fondo: fondoOpcional,
 });
 
 export const PosicionRow = z.object({
@@ -37,6 +50,7 @@ export const PosicionRow = z.object({
   sector: z.string({ error: "Sector requerido." }).trim().min(1, { error: "Sector requerido." }),
   cantidad: numeroPositivo,
   precio: z.number({ error: "Debe ser un numero." }).nonnegative({ error: "No puede ser negativo." }),
+  fondo: fondoOpcional,
 });
 
 export const FondoRow = z.object({
@@ -44,6 +58,7 @@ export const FondoRow = z.object({
   valor_total_fondo: numeroPositivo,
   valor_cuotaparte: numeroPositivo,
   cuotapartes_totales: numeroPositivo,
+  fondo: fondoOpcional,
 });
 
 export const ClienteRow = z.object({
@@ -58,6 +73,7 @@ export const MovimientoRow = z.object({
   fecha,
   tipo: aporte_retiro,
   monto: numeroPositivo,
+  fondo: fondoOpcional,
 });
 
 export type ValorCuotaparteRow = z.infer<typeof ValorCuotaparteRow>;
