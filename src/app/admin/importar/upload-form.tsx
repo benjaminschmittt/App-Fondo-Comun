@@ -2,77 +2,56 @@
 
 import { useActionState } from "react";
 import { subirExcel, type UploadState } from "./actions";
-import { C } from "@/lib/theme";
+import type { ImportError } from "@/lib/excel/validate";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { UploadCard } from "@/components/upload-card";
+import { DataTable, type DataTableColumn } from "@/components/data-table";
 
 const initialState: UploadState = undefined;
+
+const errorColumns: DataTableColumn<ImportError & { idx: number }>[] = [
+  { key: "hoja", header: "Hoja", render: (e) => e.hoja },
+  { key: "fila", header: "Fila", render: (e) => e.fila || "-" },
+  { key: "columna", header: "Columna", render: (e) => e.columna ?? "-" },
+  { key: "motivo", header: "Motivo", render: (e) => e.motivo },
+];
 
 export function UploadForm() {
   const [state, formAction, pending] = useActionState(subirExcel, initialState);
 
   return (
-    <div>
-      <form action={formAction}>
-        <div className="mb-4">
-          <label style={{ fontSize: 12, fontWeight: 600, color: C.ink, display: "block", marginBottom: 6 }}>
-            Archivo Excel (.xlsx)
-          </label>
-          <input type="file" name="archivo" accept=".xlsx" required style={{ fontSize: 13.5 }} />
-        </div>
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg"
-          style={{
-            background: C.navy,
-            color: "#fff",
-            padding: "10px 20px",
-            fontWeight: 600,
-            fontSize: 14,
-            opacity: pending ? 0.7 : 1,
-          }}
-        >
+    <div className="space-y-5">
+      <form action={formAction} className="space-y-4">
+        <UploadCard name="archivo" accept=".xlsx" required disabled={pending} />
+        <Button type="submit" disabled={pending}>
           {pending ? "Procesando..." : "Importar"}
-        </button>
+        </Button>
       </form>
 
       {state && !state.ok && (
-        <div className="mt-5">
-          <div
-            className="rounded-lg px-4 py-3 mb-3"
-            style={{ background: "#fef2f2", color: C.neg, fontSize: 13.5, fontWeight: 600 }}
-          >
-            Se encontraron {state.errors.length} error(es). No se modifico la base de datos.
-          </div>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
-              <thead>
-                <tr style={{ color: C.muted, textAlign: "left", fontSize: 11, textTransform: "uppercase" }}>
-                  <th style={{ padding: "6px" }}>Hoja</th>
-                  <th style={{ padding: "6px" }}>Fila</th>
-                  <th style={{ padding: "6px" }}>Columna</th>
-                  <th style={{ padding: "6px" }}>Motivo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {state.errors.map((e, i) => (
-                  <tr key={i} style={{ borderTop: `1px solid ${C.line}` }}>
-                    <td style={{ padding: "6px" }}>{e.hoja}</td>
-                    <td style={{ padding: "6px" }}>{e.fila || "-"}</td>
-                    <td style={{ padding: "6px" }}>{e.columna ?? "-"}</td>
-                    <td style={{ padding: "6px" }}>{e.motivo}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="space-y-3">
+          <Alert variant="destructive">
+            <AlertDescription>
+              Se encontraron {state.errors.length} error(es). No se modificó la base de datos.
+            </AlertDescription>
+          </Alert>
+          <DataTable
+            columns={errorColumns}
+            rows={state.errors.map((e, idx) => ({ ...e, idx }))}
+            rowKey={(e) => e.idx}
+          />
         </div>
       )}
 
       {state?.ok && (
-        <div className="rounded-lg px-4 py-3 mt-5" style={{ background: "#ecfdf5", color: C.pos, fontSize: 13.5 }}>
-          Importacion exitosa: {state.resumen.clientes} clientes, {state.resumen.historicoCuotaparte} fechas de
-          cuotaparte, {state.resumen.posiciones} posiciones, {state.resumen.movimientos} movimientos.
-        </div>
+        <Alert className="border-pos/30 bg-pos-soft text-pos [&_[data-slot=alert-description]]:text-pos">
+          <AlertDescription>
+            Importación exitosa: {state.resumen.clientes} clientes, {state.resumen.historicoCuotaparte}{" "}
+            fechas de cuotaparte, {state.resumen.posiciones} posiciones, {state.resumen.movimientos}{" "}
+            movimientos.
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );

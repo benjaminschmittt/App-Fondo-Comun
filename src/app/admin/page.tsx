@@ -1,7 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { getEmailsConCuenta } from "@/data/admin-users";
-import { C, fechaLarga } from "@/lib/theme";
+import { fechaLarga } from "@/lib/theme";
+import { SectionCard } from "@/components/section-card";
+import { DataTable, type DataTableColumn } from "@/components/data-table";
+import { StatusBadge } from "@/components/status-badge";
 import { InviteButton } from "./invite-button";
+
+type Cliente = Awaited<ReturnType<typeof prisma.client.findMany>>[number];
 
 export default async function AdminPage() {
   const [ultimaImportacion, clientes, emailsConCuenta] = await Promise.all([
@@ -10,86 +15,71 @@ export default async function AdminPage() {
     getEmailsConCuenta(),
   ]);
 
+  const columns: DataTableColumn<Cliente>[] = [
+    { key: "id", header: "ID", render: (c) => <span className="text-muted-foreground">{c.clienteId}</span> },
+    { key: "nombre", header: "Nombre", render: (c) => <span className="font-semibold text-foreground">{c.nombre}</span> },
+    { key: "email", header: "Email", render: (c) => <span className="text-muted-foreground">{c.email}</span> },
+    {
+      key: "activo",
+      header: "Activo",
+      render: (c) => <StatusBadge tone={c.activo ? "pos" : "neg"}>{c.activo ? "Si" : "No"}</StatusBadge>,
+    },
+    {
+      key: "cuenta",
+      header: "Cuenta",
+      render: (c) => {
+        const tieneCuenta = emailsConCuenta.has(c.email.toLowerCase());
+        return (
+          <StatusBadge tone={tieneCuenta ? "pos" : "muted"}>
+            {tieneCuenta ? "Vinculada" : "Sin invitar"}
+          </StatusBadge>
+        );
+      },
+    },
+    {
+      key: "accion",
+      header: "",
+      align: "right",
+      render: (c) => {
+        const tieneCuenta = emailsConCuenta.has(c.email.toLowerCase());
+        return tieneCuenta ? null : <InviteButton email={c.email} />;
+      },
+    },
+  ];
+
   return (
-    <div>
-      <div className="rounded-2xl p-5 mb-5" style={{ background: "#fff", border: `1px solid ${C.line}` }}>
-        <h2 style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 16, color: C.ink, fontWeight: 600, marginBottom: 10 }}>
-          Ultima actualizacion
-        </h2>
+    <div className="space-y-5">
+      <SectionCard title="Estado del fondo">
         {ultimaImportacion ? (
-          <div style={{ fontSize: 13.5, color: C.muted, lineHeight: 1.9 }}>
+          <div className="space-y-1.5 text-[13.5px] text-muted-foreground">
             <div>
-              <strong style={{ color: C.ink }}>{fechaLarga(ultimaImportacion.importadoEn)}</strong>{" "}
+              <strong className="text-foreground">{fechaLarga(ultimaImportacion.importadoEn)}</strong>{" "}
               {ultimaImportacion.importadoEn.toLocaleTimeString("es-AR")}
             </div>
             <div>Archivo: {ultimaImportacion.archivoNombre}</div>
             <div>Importado por: {ultimaImportacion.importadoPorEmail}</div>
-            <div>
-              Estado:{" "}
-              <span
-                style={{
-                  fontWeight: 600,
-                  color: ultimaImportacion.estado === "ok" ? C.pos : C.neg,
-                  textTransform: "uppercase",
-                  fontSize: 11.5,
-                }}
-              >
+            <div className="flex items-center gap-2">
+              <span>Estado:</span>
+              <StatusBadge tone={ultimaImportacion.estado === "ok" ? "pos" : "neg"}>
                 {ultimaImportacion.estado === "ok" ? "OK" : "Error"}
-              </span>{" "}
-              · {ultimaImportacion.filasProcesadas} filas procesadas
+              </StatusBadge>
+              <span>· {ultimaImportacion.filasProcesadas} filas procesadas</span>
             </div>
           </div>
         ) : (
-          <p style={{ color: C.muted, fontSize: 13.5 }}>
-            Todavia no se importo ningun Excel.
-          </p>
+          <p className="text-[13.5px] text-muted-foreground">Todavia no se importo ningun Excel.</p>
         )}
-      </div>
+      </SectionCard>
 
-      <div className="rounded-2xl p-5" style={{ background: "#fff", border: `1px solid ${C.line}` }}>
-        <h2 style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 16, color: C.ink, fontWeight: 600, marginBottom: 10 }}>
-          Clientes ({clientes.length})
-        </h2>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead>
-              <tr style={{ color: C.muted, textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                <th style={{ padding: "8px 6px" }}>ID</th>
-                <th style={{ padding: "8px 6px" }}>Nombre</th>
-                <th style={{ padding: "8px 6px" }}>Email</th>
-                <th style={{ padding: "8px 6px" }}>Activo</th>
-                <th style={{ padding: "8px 6px" }}>Cuenta</th>
-                <th style={{ padding: "8px 6px" }} />
-              </tr>
-            </thead>
-            <tbody>
-              {clientes.map((c) => {
-                const tieneCuenta = emailsConCuenta.has(c.email.toLowerCase());
-                return (
-                  <tr key={c.id} style={{ borderTop: `1px solid ${C.line}` }}>
-                    <td style={{ padding: "10px 6px", color: C.muted }}>{c.clienteId}</td>
-                    <td style={{ padding: "10px 6px", color: C.ink, fontWeight: 600 }}>{c.nombre}</td>
-                    <td style={{ padding: "10px 6px", color: C.muted }}>{c.email}</td>
-                    <td style={{ padding: "10px 6px" }}>
-                      <span style={{ color: c.activo ? C.pos : C.neg, fontWeight: 600, fontSize: 12 }}>
-                        {c.activo ? "Si" : "No"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "10px 6px" }}>
-                      <span style={{ color: tieneCuenta ? C.pos : C.muted, fontSize: 12 }}>
-                        {tieneCuenta ? "Vinculada" : "Sin invitar"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "10px 6px", textAlign: "right" }}>
-                      {!tieneCuenta && <InviteButton email={c.email} />}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <SectionCard title={`Clientes (${clientes.length})`}>
+        <DataTable
+          columns={columns}
+          rows={clientes}
+          rowKey={(c) => c.id}
+          emptyTitle="Sin clientes"
+          emptyDescription="Todavia no hay clientes cargados."
+        />
+      </SectionCard>
     </div>
   );
 }
