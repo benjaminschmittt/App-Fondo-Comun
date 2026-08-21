@@ -32,6 +32,8 @@ export function AdminShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const currentLabel =
+    NAV_ITEMS.find((item) => item.href === pathname)?.label ?? "Panel Administrador";
 
   return (
     <SidebarProvider>
@@ -91,7 +93,7 @@ export function AdminShell({
         <header className="flex items-center gap-3 border-b border-border px-4 py-3 md:hidden">
           <SidebarTrigger />
           <span className="text-sm font-semibold text-foreground">
-            Panel Administrador
+            {currentLabel}
           </span>
         </header>
         {children}

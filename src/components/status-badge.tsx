@@ -5,7 +5,11 @@ const TONE_CLASS = {
   pos: "bg-pos-soft text-pos",
   neg: "bg-neg-soft text-neg",
   warn: "bg-warn-soft text-warn",
-  muted: "bg-muted text-muted-foreground",
+  // Outline en vez de fondo tintado: bg-muted + text-muted-foreground da
+  // ~4.27:1 de contraste, por debajo del 4.5:1 que pide WCAG AA para texto
+  // normal. Sin fondo propio (bg-transparent, apoyado en la card blanca de
+  // atrás) el mismo texto sube a ~4.8:1.
+  muted: "border-border bg-transparent text-muted-foreground",
 } as const;
 
 export function StatusBadge({
