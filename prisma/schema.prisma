@@ -109,3 +109,22 @@ model ImportBatch {
 
   @@map("import_batches")
 }
+
+// Auditoria de acciones admin (mas alla de importar Excel, que ya tiene su
+// propia tabla). Cada accion sensible del panel admin deja un rastro aca:
+// quien, que accion, sobre que entidad, y el detalle. De solo-lectura desde
+// el resto de la app (nadie edita ni borra filas de auditoria).
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  actorId      String   @map("actor_id") @db.Uuid
+  actorEmail   String   @map("actor_email")
+  accion       String
+  entidad      String?
+  entidadId    String?  @map("entidad_id")
+  detalle      Json?
+  creadoEn     DateTime @default(now()) @map("creado_en")
+
+  @@index([creadoEn])
+  @@index([actorId])
+  @@map("audit_log")
+}
