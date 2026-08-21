@@ -11,7 +11,7 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <main className="px-5 md:px-8 py-6" style={{ maxWidth: 1160, margin: "0 auto" }}>
+    <div>
       <div className="rounded-2xl p-5 mb-5" style={{ background: "#fff", border: `1px solid ${C.line}` }}>
         <h2 style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 16, color: C.ink, fontWeight: 600, marginBottom: 10 }}>
           Ultima actualizacion
@@ -90,6 +90,6 @@ export default async function AdminPage() {
           </table>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

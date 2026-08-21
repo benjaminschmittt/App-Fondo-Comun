@@ -6,27 +6,28 @@
 // (rediseño V1+) usan las utilidades de Tailwind (bg-navy, text-gold,
 // etc.) en vez de importar C directamente.
 export const C = {
-  navy: "#00296b",
-  navyDeep: "#001b47",
-  navyDeeper: "#00112e",
-  gold: "#c9a24a",
-  goldSoft: "#e3c878",
-  ink: "#0f172a",
-  muted: "#5b6474",
-  line: "#e3e7f0",
-  surface: "#f7f8fb",
+  navy: "#0f172a",
+  navyDeep: "#1e293b",
+  navyDeeper: "#060b14",
+  gold: "#0f766e",
+  goldSoft: "#5eead4",
+  ink: "#111827",
+  muted: "#6b7280",
+  line: "#e5e7eb",
+  surface: "#f7f8fa",
   pos: "#15803d",
   neg: "#b91c1c",
+  warn: "#b45309",
 } as const;
 
 // Espeja --chart-1..5 de globals.css.
 export const CHART_COLORS = [
-  "#00296b", // chart-1 / navy
-  "#c9a24a", // chart-2 / gold
+  "#0f172a", // chart-1 / navy
+  "#0f766e", // chart-2 / gold (petroleo)
   "#3b6ea5", // chart-3
   "#8aa0b8", // chart-4
-  "#1f4e8c", // chart-5
-  "#d9b878",
+  "#14b8a6", // chart-5
+  "#5eead4",
 ];
 
 export const money = (n: number, dec = 0) =>

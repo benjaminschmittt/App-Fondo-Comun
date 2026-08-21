@@ -1,94 +1,37 @@
-import { C } from "@/lib/theme";
 import { LoginForm } from "./login-form";
 
 export default function LoginPage() {
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-5"
-      style={{
-        background: `radial-gradient(1200px 600px at 50% -10%, ${C.navy} 0%, ${C.navyDeep} 45%, ${C.navyDeeper} 100%)`,
-      }}
-    >
-      <div className="w-full" style={{ maxWidth: 420 }}>
-        <div className="flex flex-col items-center mb-7 fade-up">
-          <div
-            className="flex items-center justify-center mb-4"
-            style={{
-              width: 78,
-              height: 78,
-              borderRadius: "50%",
-              border: `1.5px solid ${C.gold}`,
-              background: "rgba(255,255,255,0.04)",
-            }}
-          >
-            <span
-              style={{
-                fontFamily: "var(--font-fraunces), serif",
-                fontSize: 30,
-                fontWeight: 600,
-                color: C.goldSoft,
-              }}
-            >
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(1200px_600px_at_50%_-10%,var(--navy)_0%,var(--navy-800)_45%,var(--navy-900)_100%)] p-5">
+      <div className="w-full max-w-105">
+        <div className="fade-up mb-7 flex flex-col items-center">
+          <div className="mb-4 flex size-19.5 items-center justify-center rounded-full border-[1.5px] border-gold bg-white/4">
+            <span className="font-heading text-3xl font-semibold text-gold-soft">
               F
             </span>
           </div>
           <div className="text-center">
-            <div
-              style={{
-                fontFamily: "var(--font-fraunces), serif",
-                fontSize: 26,
-                fontWeight: 600,
-                color: "#fff",
-                letterSpacing: 0.3,
-              }}
-            >
+            <div className="font-heading text-2xl font-semibold tracking-wide text-white">
               Fondo Privado
             </div>
-            <div
-              style={{
-                color: C.goldSoft,
-                fontSize: 11,
-                letterSpacing: 2.5,
-                textTransform: "uppercase",
-                marginTop: 4,
-              }}
-            >
+            <div className="mt-1 text-[11px] tracking-[0.2em] text-gold-soft uppercase">
               Portal de Clientes
             </div>
           </div>
         </div>
 
         <div
-          className="rounded-2xl p-7 fade-up"
-          style={{
-            background: "#fff",
-            boxShadow: "0 24px 60px rgba(0,17,46,0.45)",
-            animationDelay: "80ms",
-          }}
+          className="fade-up rounded-2xl bg-card p-7 shadow-[0_24px_60px_rgba(0,17,46,0.45)]"
+          style={{ animationDelay: "80ms" }}
         >
           <div className="mb-5">
-            <div
-              style={{
-                color: C.gold,
-                fontSize: 10.5,
-                letterSpacing: 2,
-                textTransform: "uppercase",
-                fontWeight: 600,
-              }}
-            >
+            <div className="text-[10.5px] font-semibold tracking-[0.15em] text-gold uppercase">
               Acceso exclusivo
             </div>
-            <h1
-              style={{
-                fontFamily: "var(--font-fraunces), serif",
-                fontSize: 22,
-                color: C.ink,
-                marginTop: 6,
-              }}
-            >
+            <h1 className="mt-1.5 font-heading text-xl text-ink">
               Bienvenido
             </h1>
-            <p style={{ color: C.muted, fontSize: 13.5, marginTop: 4 }}>
+            <p className="mt-1 text-sm text-muted-foreground">
               Ingresa con tus credenciales para ver tu inversion.
             </p>
           </div>
@@ -96,10 +39,7 @@ export default function LoginPage() {
           <LoginForm />
         </div>
 
-        <div
-          className="text-center mt-6"
-          style={{ color: "rgba(255,255,255,0.45)", fontSize: 11.5, lineHeight: 1.8 }}
-        >
+        <div className="mt-6 text-center text-[11.5px] leading-relaxed text-white/45">
           Acceso exclusivo para clientes del fondo
         </div>
       </div>

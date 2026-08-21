@@ -1,23 +1,8 @@
-import { C } from "@/lib/theme";
-
 export function Spinner() {
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center"
-      style={{ background: C.surface, gap: 14 }}
-    >
-      <div
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: "50%",
-          border: `3px solid ${C.line}`,
-          borderTopColor: C.navy,
-          animation: "spin 0.8s linear infinite",
-        }}
-      />
-      <div style={{ color: C.muted, fontSize: 13 }}>Cargando...</div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3.5 bg-background">
+      <div className="size-9 animate-spin rounded-full border-3 border-gray-200 border-t-navy" />
+      <div className="text-sm text-muted-foreground">Cargando...</div>
     </div>
   );
 }

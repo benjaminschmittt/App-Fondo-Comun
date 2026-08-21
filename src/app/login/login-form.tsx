@@ -1,142 +1,74 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
 import { Lock, User } from "lucide-react";
 import { login, type LoginState } from "./actions";
-import { C } from "@/lib/theme";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const initialState: LoginState = undefined;
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(login, initialState);
-  const [focus, setFocus] = useState<"email" | "password" | null>(null);
 
   return (
-    <form action={formAction}>
-      <div className="mb-4">
-        <label
-          htmlFor="email"
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: C.ink,
-            display: "block",
-            marginBottom: 6,
-          }}
-        >
-          Email
-        </label>
-        <div
-          className="flex items-center rounded-lg px-3"
-          style={{
-            border: `1.5px solid ${focus === "email" ? C.navy : C.line}`,
-            background: "#fff",
-            transition: "border-color .15s",
-          }}
-        >
-          <span style={{ color: focus === "email" ? C.navy : C.muted }}>
-            <User size={16} />
-          </span>
-          <input
+    <form action={formAction} className="space-y-4">
+      <div className="space-y-1.5">
+        <Label htmlFor="email">Email</Label>
+        <div className="relative">
+          <User className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
             id="email"
             name="email"
             type="email"
             required
             autoComplete="username"
             placeholder="tu@email.com"
-            onFocus={() => setFocus("email")}
-            onBlur={() => setFocus(null)}
-            className="w-full outline-none"
-            style={{
-              padding: "11px 10px",
-              fontSize: 14.5,
-              color: C.ink,
-              background: "transparent",
-            }}
+            className="h-10 pl-8"
           />
         </div>
       </div>
 
-      <div className="mb-2">
-        <label
-          htmlFor="password"
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: C.ink,
-            display: "block",
-            marginBottom: 6,
-          }}
-        >
-          Contraseña
-        </label>
-        <div
-          className="flex items-center rounded-lg px-3"
-          style={{
-            border: `1.5px solid ${focus === "password" ? C.navy : C.line}`,
-            background: "#fff",
-            transition: "border-color .15s",
-          }}
-        >
-          <span style={{ color: focus === "password" ? C.navy : C.muted }}>
-            <Lock size={16} />
-          </span>
-          <input
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password">Contraseña</Label>
+          <Link
+            href="/recuperar"
+            className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
+        <div className="relative">
+          <Lock className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
             id="password"
             name="password"
             type="password"
             required
             autoComplete="current-password"
             placeholder="••••••••"
-            onFocus={() => setFocus("password")}
-            onBlur={() => setFocus(null)}
-            className="w-full outline-none"
-            style={{
-              padding: "11px 10px",
-              fontSize: 14.5,
-              color: C.ink,
-              background: "transparent",
-            }}
+            className="h-10 pl-8"
           />
         </div>
       </div>
 
-      <div className="text-right mb-3">
-        <Link
-          href="/recuperar"
-          style={{ fontSize: 12.5, color: C.muted, textDecoration: "underline" }}
-        >
-          ¿Olvidaste tu contraseña?
-        </Link>
-      </div>
-
       {state?.error && (
-        <div
-          className="rounded-lg px-3 py-2 mt-1 mb-2"
-          style={{ background: "#fef2f2", color: C.neg, fontSize: 13 }}
-        >
-          {state.error}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{state.error}</AlertDescription>
+        </Alert>
       )}
 
-      <button
+      <Button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg mt-2 transition-all"
-        style={{
-          background: C.navy,
-          color: "#fff",
-          padding: "12px 0",
-          fontWeight: 600,
-          fontSize: 14.5,
-          letterSpacing: 0.3,
-          opacity: pending ? 0.7 : 1,
-          cursor: pending ? "default" : "pointer",
-        }}
+        className="h-10.5 w-full text-sm font-semibold tracking-wide"
       >
         {pending ? "Ingresando..." : "Ingresar"}
-      </button>
+      </Button>
     </form>
   );
 }

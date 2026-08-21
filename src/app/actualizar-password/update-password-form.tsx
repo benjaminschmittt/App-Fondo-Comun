@@ -2,7 +2,10 @@
 
 import { useActionState } from "react";
 import { actualizarPassword, type UpdatePasswordState } from "./actions";
-import { C } from "@/lib/theme";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const initialState: UpdatePasswordState = undefined;
 
@@ -13,57 +16,44 @@ export function UpdatePasswordForm() {
   );
 
   return (
-    <form action={formAction}>
-      <div className="mb-4">
-        <label
-          htmlFor="password"
-          style={{ fontSize: 12, fontWeight: 600, color: C.ink, display: "block", marginBottom: 6 }}
-        >
-          Nueva contraseña
-        </label>
-        <input
+    <form action={formAction} className="space-y-4">
+      <div className="space-y-1.5">
+        <Label htmlFor="password">Nueva contraseña</Label>
+        <Input
           id="password"
           name="password"
           type="password"
           required
           minLength={8}
-          className="w-full outline-none rounded-lg"
-          style={{ border: `1.5px solid ${C.line}`, padding: "11px 12px", fontSize: 14.5, color: C.ink }}
+          className="h-10"
         />
       </div>
 
-      <div className="mb-2">
-        <label
-          htmlFor="confirmar"
-          style={{ fontSize: 12, fontWeight: 600, color: C.ink, display: "block", marginBottom: 6 }}
-        >
-          Confirmar contraseña
-        </label>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="confirmar">Confirmar contraseña</Label>
+        <Input
           id="confirmar"
           name="confirmar"
           type="password"
           required
           minLength={8}
-          className="w-full outline-none rounded-lg"
-          style={{ border: `1.5px solid ${C.line}`, padding: "11px 12px", fontSize: 14.5, color: C.ink }}
+          className="h-10"
         />
       </div>
 
       {state?.error && (
-        <div className="rounded-lg px-3 py-2 mt-1 mb-2" style={{ background: "#fef2f2", color: C.neg, fontSize: 13 }}>
-          {state.error}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{state.error}</AlertDescription>
+        </Alert>
       )}
 
-      <button
+      <Button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg mt-2"
-        style={{ background: C.navy, color: "#fff", padding: "12px 0", fontWeight: 600, fontSize: 14.5, opacity: pending ? 0.7 : 1 }}
+        className="h-10.5 w-full text-sm font-semibold"
       >
         {pending ? "Guardando..." : "Guardar nueva contraseña"}
-      </button>
+      </Button>
     </form>
   );
 }

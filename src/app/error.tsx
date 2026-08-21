@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { C } from "@/lib/theme";
+import { Button } from "@/components/ui/button";
 
 export default function Error({
   error,
@@ -15,58 +15,26 @@ export default function Error({
   }, [error]);
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-5"
-      style={{ background: C.surface }}
-    >
-      <div className="text-center" style={{ maxWidth: 380 }}>
-        <div
-          className="flex items-center justify-center mx-auto mb-5"
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: "50%",
-            border: `1.5px solid ${C.neg}`,
-            background: "#fff",
-          }}
-        >
-          <span style={{ fontSize: 26, color: C.neg }}>!</span>
+    <div className="flex min-h-screen items-center justify-center bg-background p-5">
+      <div className="max-w-95 text-center">
+        <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full border-[1.5px] border-neg bg-card">
+          <span className="text-2xl text-neg">!</span>
         </div>
-        <h1
-          style={{
-            fontFamily: "var(--font-fraunces), serif",
-            fontSize: 22,
-            color: C.ink,
-            marginBottom: 8,
-          }}
-        >
+        <h1 className="mb-2 font-heading text-xl text-ink">
           Algo salió mal
         </h1>
-        <p style={{ color: C.muted, fontSize: 14, marginBottom: 24 }}>
+        <p className="mb-6 text-sm text-muted-foreground">
           Ocurrió un error inesperado. Podés intentar de nuevo.
           {error.digest && (
             <>
               <br />
-              <span style={{ fontSize: 11, color: C.muted }}>
+              <span className="text-xs text-muted-foreground">
                 Referencia: {error.digest}
               </span>
             </>
           )}
         </p>
-        <button
-          onClick={reset}
-          className="rounded-lg"
-          style={{
-            background: C.navy,
-            color: "#fff",
-            padding: "10px 22px",
-            fontWeight: 600,
-            fontSize: 14,
-            border: "none",
-          }}
-        >
-          Reintentar
-        </button>
+        <Button onClick={reset}>Reintentar</Button>
       </div>
     </div>
   );

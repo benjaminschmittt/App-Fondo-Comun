@@ -1,5 +1,5 @@
 import { getMiInversion } from "@/data/inversion";
-import { AppHeader } from "@/components/app-header";
+import { ClientTopbar } from "@/components/client-topbar";
 import { DashboardView } from "./dashboard-view";
 
 export default async function DashboardPage() {
@@ -7,7 +7,7 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <AppHeader nombre={data.nombre} fechaCorte={data.fondo.fechaCorte} />
+      <ClientTopbar nombre={data.nombre} fechaCorte={data.fondo.fechaCorte} />
       <DashboardView data={data} />
     </>
   );
