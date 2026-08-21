@@ -7,7 +7,7 @@
 /* ============================================================
    Sistema de diseño — Portal de Clientes, Fondo Privado
    Rediseño visual (ver plan). Paleta banca privada / wealth
-   management: navy + dorado apagado, siempre en modo claro (esta
+   management: azul noche + petroleo, siempre en modo claro (esta
    app no tiene toggle de dark mode, "fondo siempre claro" a
    proposito para un portal financiero).
    ============================================================ */
@@ -20,8 +20,9 @@
   --font-heading: var(--font-inter);
 
   /* Paleta de marca, expuesta como utilidades de Tailwind
-     (bg-navy, text-gold-soft, border-line, etc. — nombres historicos,
-     ver nota de valores mas abajo: navy = azul noche, gold = petroleo). */
+     (bg-navy, text-gold-soft, border-gray-200, etc. — nombres
+     historicos, ver nota de valores mas abajo: navy = azul noche,
+     gold = petroleo). */
   --color-navy-900: var(--navy-900);
   --color-navy-800: var(--navy-800);
   --color-navy: var(--navy);
