@@ -37,7 +37,6 @@ export function RecoverForm() {
           type="email"
           required
           placeholder="tu@email.com"
-          className="h-10"
         />
       </div>
 
@@ -47,11 +46,7 @@ export function RecoverForm() {
         </Alert>
       )}
 
-      <Button
-        type="submit"
-        disabled={pending}
-        className="h-10.5 w-full text-sm font-semibold"
-      >
+      <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Enviando..." : "Enviar link de recuperacion"}
       </Button>
 

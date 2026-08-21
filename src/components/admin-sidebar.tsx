@@ -40,7 +40,7 @@ export function AdminShell({
       <Sidebar collapsible="offcanvas">
         <SidebarHeader className="px-3 py-4">
           <div className="flex items-center gap-2.5 px-1">
-            <div className="flex size-8 items-center justify-center rounded-full border border-gold/60">
+            <div className="flex size-8 items-center justify-center rounded-full border-[1.5px] border-gold">
               <span className="font-heading text-sm font-semibold text-gold-soft">
                 F
               </span>

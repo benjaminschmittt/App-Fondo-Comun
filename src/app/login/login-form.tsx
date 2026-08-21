@@ -27,7 +27,7 @@ export function LoginForm() {
             required
             autoComplete="username"
             placeholder="tu@email.com"
-            className="h-10 pl-8"
+            className="pl-8"
           />
         </div>
       </div>
@@ -51,7 +51,7 @@ export function LoginForm() {
             required
             autoComplete="current-password"
             placeholder="••••••••"
-            className="h-10 pl-8"
+            className="pl-8"
           />
         </div>
       </div>
@@ -62,11 +62,7 @@ export function LoginForm() {
         </Alert>
       )}
 
-      <Button
-        type="submit"
-        disabled={pending}
-        className="h-10.5 w-full text-sm font-semibold tracking-wide"
-      >
+      <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Ingresando..." : "Ingresar"}
       </Button>
     </form>

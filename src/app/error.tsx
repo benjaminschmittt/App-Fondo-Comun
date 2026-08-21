@@ -16,7 +16,7 @@ export default function Error({
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-5">
-      <div className="max-w-95 text-center">
+      <div className="fade-up max-w-95 text-center">
         <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full border-[1.5px] border-neg bg-card">
           <span className="text-2xl text-neg">!</span>
         </div>

@@ -137,6 +137,14 @@
 
   --radius: 0.5rem;
 
+  /* Sombra de card — misma identidad que el hero del login (elevacion via
+     sombra profunda tintada de navy, no un borde fino). --shadow-card es
+     la versión suave para cards blancas sobre el fondo claro de la app;
+     --shadow-hero es la versión fuerte del login, para elementos oscuros
+     (card hero del dashboard, el propio card de login). */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 16px 32px -16px rgba(15, 23, 42, 0.18);
+  --shadow-hero: 0 20px 45px -12px rgba(15, 23, 42, 0.35);
+
   --background: #f7f8fa;
   --foreground: var(--ink);
   --card: #ffffff;

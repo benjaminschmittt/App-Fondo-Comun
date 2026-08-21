@@ -28,8 +28,8 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        "rounded-xl bg-card p-5 ring-1 ring-foreground/10",
-        hero && "bg-primary text-primary-foreground shadow-md ring-0",
+        "rounded-2xl bg-card p-6 ring-1 ring-black/5 shadow-[var(--shadow-card)]",
+        hero && "bg-primary text-primary-foreground shadow-[var(--shadow-hero)] ring-0",
         className
       )}
     >

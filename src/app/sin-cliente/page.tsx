@@ -14,7 +14,7 @@ export default async function SinClientePage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-5">
-      <div className="max-w-100 text-center">
+      <div className="fade-up max-w-100 text-center">
         <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full border-[1.5px] border-gold bg-card">
           <span className="font-heading text-2xl font-semibold text-navy">
             F

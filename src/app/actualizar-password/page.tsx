@@ -10,7 +10,7 @@ export default async function ActualizarPasswordPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-5">
-      <div className="w-full max-w-105">
+      <div className="fade-up w-full max-w-105">
         <Card>
           <CardHeader>
             <h1 className="font-heading text-xl text-ink">

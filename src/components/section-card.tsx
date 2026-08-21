@@ -13,7 +13,7 @@ export function SectionCard({
   className?: string;
 }) {
   return (
-    <Card className={cn("min-w-0 [--card-spacing:1.25rem]", className)}>
+    <Card className={cn("min-w-0 [--card-spacing:1.5rem]", className)}>
       {(title || action) && (
         <CardHeader>
           {title && (

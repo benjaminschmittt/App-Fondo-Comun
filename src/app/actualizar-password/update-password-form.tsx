@@ -25,7 +25,6 @@ export function UpdatePasswordForm() {
           type="password"
           required
           minLength={8}
-          className="h-10"
         />
       </div>
 
@@ -37,7 +36,6 @@ export function UpdatePasswordForm() {
           type="password"
           required
           minLength={8}
-          className="h-10"
         />
       </div>
 
@@ -47,11 +45,7 @@ export function UpdatePasswordForm() {
         </Alert>
       )}
 
-      <Button
-        type="submit"
-        disabled={pending}
-        className="h-10.5 w-full text-sm font-semibold"
-      >
+      <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Guardando..." : "Guardar nueva contraseña"}
       </Button>
     </form>

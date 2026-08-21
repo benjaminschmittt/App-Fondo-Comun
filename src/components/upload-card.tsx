@@ -48,7 +48,7 @@ export function UploadCard({
         if (e.key === "Enter" || e.key === " ") inputRef.current?.click();
       }}
       className={cn(
-        "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border px-6 py-9 text-center transition-colors hover:border-accent/50 hover:bg-muted/40",
+        "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border px-6 py-9 text-center transition-colors hover:border-accent/50 hover:bg-muted/40",
         dragOver && "border-accent bg-muted/60"
       )}
     >
