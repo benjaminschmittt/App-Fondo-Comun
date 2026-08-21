@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { requireUser } from "@/data/auth";
 import { logout } from "@/app/actions";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = { title: "Sin inversión vinculada" };
 
 // Pagina de destino para un usuario autenticado que no tiene (o ya no
 // tiene) un cliente activo vinculado a su email. No es una ruta privada

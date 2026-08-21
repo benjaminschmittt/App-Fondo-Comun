@@ -17,7 +17,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Fondo Privado — Portal de Clientes",
+  title: {
+    default: "Fondo Privado — Portal de Clientes",
+    template: "%s — Fondo Privado",
+  },
   description: "Portal de clientes del fondo de inversion privado.",
 };
 

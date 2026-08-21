@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { getEmailsConCuenta } from "@/data/admin-users";
 import { fechaLarga } from "@/lib/theme";
@@ -6,6 +7,8 @@ import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { InviteButton } from "./invite-button";
+
+export const metadata: Metadata = { title: "Clientes" };
 
 type Cliente = Awaited<ReturnType<typeof prisma.client.findMany>>[number];
 

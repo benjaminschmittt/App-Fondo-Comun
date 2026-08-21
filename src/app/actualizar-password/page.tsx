@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { requireUser } from "@/data/auth";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { UpdatePasswordForm } from "./update-password-form";
+
+export const metadata: Metadata = { title: "Nueva contraseña" };
 
 export default async function ActualizarPasswordPage() {
   await requireUser();

@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { SectionCard } from "@/components/section-card";
 import { UploadForm } from "./upload-form";
+
+export const metadata: Metadata = { title: "Importar Excel" };
 
 export default function ImportarPage() {
   return (
