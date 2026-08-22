@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath, updateTag } from "next/cache";
-import { requireAdminRole } from "@/data/auth";
+import { requireAdmin } from "@/data/auth";
 import { importExcel, type ImportResult } from "@/lib/excel/import";
 import { FONDO_DATA_TAG } from "@/data/fondo";
 
@@ -11,7 +11,7 @@ export async function subirExcel(
   _prevState: UploadState,
   formData: FormData
 ): Promise<UploadState> {
-  const user = await requireAdminRole();
+  const user = await requireAdmin();
 
   const file = formData.get("archivo");
   if (!(file instanceof File) || file.size === 0) {

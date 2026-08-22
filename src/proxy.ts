@@ -34,20 +34,48 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isPrivateRoute =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isPrivateRoute = pathname.startsWith("/dashboard") || isAdminRoute;
   const isLoginRoute = pathname.startsWith("/login");
 
-  if (!user && isPrivateRoute) {
+  // Redirige preservando las cookies que supabase-ssr ya haya refrescado
+  // en `response` (ver setAll arriba) — si no las copiaramos, un
+  // refresh de token justo antes del redirect se perderia.
+  function redirectTo(path: string) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    url.pathname = path;
+    const redirectResponse = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
+    });
+    return redirectResponse;
+  }
+
+  if (!user && isPrivateRoute) {
+    return redirectTo("/login");
   }
 
   if (user && isLoginRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    return redirectTo("/dashboard");
+  }
+
+  // 2FA obligatorio para admin: se chequea ACA (middleware), no en el
+  // Server Component del layout de /admin. Motivo: si getUser() dispara
+  // un refresh de token, un Server Component no puede persistir la
+  // cookie nueva (Next.js la descarta en silencio fuera de Server
+  // Actions/Route Handlers — ver el catch en src/lib/supabase/server.ts).
+  // Eso hacia que la sesion "perdiera" el aal2 en cada navegacion y
+  // pidiera el codigo de 2FA una y otra vez, bloqueando en la practica
+  // cualquier accion de admin (bug real visto en produccion). El
+  // middleware si puede persistir cookies de forma confiable.
+  if (user && isAdminRoute && user.app_metadata?.role === "admin") {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.currentLevel !== aal.nextLevel) {
+      return redirectTo("/verificar-2fa");
+    }
+    if (aal && aal.nextLevel === "aal1") {
+      return redirectTo("/configurar-2fa");
+    }
   }
 
   return response;
