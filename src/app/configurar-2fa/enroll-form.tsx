@@ -24,10 +24,10 @@ export function EnrollForm({
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="factorId" value={factorId} />
 
-      <div
-        className="mx-auto flex size-44 items-center justify-center rounded-xl border border-border bg-white p-2 [&_svg]:size-full"
-        dangerouslySetInnerHTML={{ __html: qrCode }}
-      />
+      <div className="mx-auto flex size-44 items-center justify-center rounded-xl border border-border bg-white p-2">
+        {/* eslint-disable-next-line @next/next/no-img-element -- data URI de Supabase, no un asset optimizable */}
+        <img src={qrCode} alt="Código QR para configurar la app autenticadora" className="size-full" />
+      </div>
 
       <div className="rounded-lg bg-muted px-3 py-2 text-center">
         <div className="label-eyebrow text-muted-foreground">
