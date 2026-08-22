@@ -32,6 +32,13 @@ export async function login(
   }
 
   if (data.user.app_metadata?.role === "admin") {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.currentLevel !== aal.nextLevel) {
+      redirect("/verificar-2fa");
+    }
+    if (aal && aal.nextLevel === "aal1") {
+      redirect("/configurar-2fa");
+    }
     redirect("/admin");
   }
 

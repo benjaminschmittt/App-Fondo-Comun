@@ -24,11 +24,26 @@ export async function requireUser() {
 
 // El rol vive en app_metadata (solo lo puede escribir el service_role,
 // nunca el propio usuario), no en user_metadata. Ver docs de setup.
+// 2FA (TOTP) es obligatorio para admin: si todavia no tiene un factor
+// enrolado lo mandamos a configurarlo, y si lo tiene pero esta sesion
+// no llego a aal2 (recien hizo login con password) lo mandamos a
+// verificar el codigo. Ninguna de las dos rutas pasa por requireAdmin
+// (estan fuera de /admin), asi que no hay riesgo de loop.
 export async function requireAdmin() {
   const user = await requireUser();
   if (user.app_metadata?.role !== "admin") {
     redirect("/dashboard");
   }
+
+  const supabase = await createClient();
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal && aal.currentLevel !== aal.nextLevel) {
+    redirect("/verificar-2fa");
+  }
+  if (aal && aal.nextLevel === "aal1") {
+    redirect("/configurar-2fa");
+  }
+
   return user;
 }
 
