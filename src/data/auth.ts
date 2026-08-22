@@ -24,16 +24,33 @@ export async function requireUser() {
 
 // El rol vive en app_metadata (solo lo puede escribir el service_role,
 // nunca el propio usuario), no en user_metadata. Ver docs de setup.
-// 2FA (TOTP) es obligatorio para admin: si todavia no tiene un factor
-// enrolado lo mandamos a configurarlo, y si lo tiene pero esta sesion
-// no llego a aal2 (recien hizo login con password) lo mandamos a
-// verificar el codigo. Ninguna de las dos rutas pasa por requireAdmin
-// (estan fuera de /admin), asi que no hay riesgo de loop.
-export async function requireAdmin() {
+// Chequea SOLO el rol — usar en Server Actions y en llamadas desde
+// Server Components que ya cuelgan de /admin (donde requireAdmin() de
+// abajo ya exigio el rol Y el 2FA para poder llegar ahi). No re-chequea
+// el AAL a proposito: hacerlo desde una Server Action (ej. subirExcel,
+// invitarCliente) causaba un redirect espurio a /verificar-2fa que a su
+// vez rebotaba de inmediato a /admin (porque la sesion SI estaba en
+// aal2) — la accion nunca llegaba a correr y quedaba en silencio, sin
+// error ni confirmacion. Bug real visto en produccion, no reintroducir
+// el chequeo de AAL aca.
+export async function requireAdminRole() {
   const user = await requireUser();
   if (user.app_metadata?.role !== "admin") {
     redirect("/dashboard");
   }
+  return user;
+}
+
+// Gate completo para renderizar paginas: rol + 2FA obligatorio. Usar
+// SOLO en layouts/paginas de nivel superior (admin/layout.tsx) — nunca
+// dentro de una Server Action (ver comentario de requireAdminRole).
+// Si todavia no tiene un factor enrolado lo manda a configurarlo, y si
+// lo tiene pero esta sesion no llego a aal2 (recien hizo login con
+// password) lo manda a verificar el codigo. Ninguna de las dos rutas
+// pasa por requireAdmin (estan fuera de /admin), asi que no hay riesgo
+// de loop.
+export async function requireAdmin() {
+  const user = await requireAdminRole();
 
   const supabase = await createClient();
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();

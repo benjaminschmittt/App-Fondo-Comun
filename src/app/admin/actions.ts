@@ -1,14 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/data/auth";
+import { requireAdminRole } from "@/data/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { registrarAuditoria } from "@/data/audit";
 
 export type InviteResult = { ok: true } | { ok: false; error: string };
 
 export async function invitarCliente(email: string): Promise<InviteResult> {
-  const adminUser = await requireAdmin();
+  const adminUser = await requireAdminRole();
 
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const admin = createAdminClient();
