@@ -81,16 +81,31 @@ proyecto, desplegado en Vercel.
   admin (listado + import Excel) ya están reescritos sobre estos
   componentes. Verificado número por número contra los valores de antes del
   rediseño — ningún cálculo cambió.
+- **Fase 3, Etapa 3:** 2FA obligatorio para admin (Supabase Auth MFA/TOTP
+  nativo, sin servicio externo). `requireAdmin()` en `src/data/auth.ts`
+  chequea el Authenticator Assurance Level: sin factor → `/configurar-2fa`,
+  con factor pero sesión sin elevar → `/verificar-2fa`. **Solo admin —
+  el login de cliente no tiene 2FA.** La cuenta admin real quedó sin
+  ningún factor enrolado a propósito (se probó y se limpió el factor de
+  prueba) — el primer login real después de deployar esto va a pedir
+  enrolar de cero, con el celular del usuario. Vía de escape si pierde el
+  celular: borrar el factor desde el dashboard de Supabase (Authentication
+  → Users → el usuario → MFA) o con `supabase.auth.admin.mfa.deleteFactor`
+  usando el `service_role`.
 
 ## Qué falta (ver el plan para el detalle etapa por etapa)
 
-El rediseño visual (V0→V6) ya terminó. Sigue: Fase 3 Etapa 2 (Reportes PDF,
-con `@react-pdf/renderer`) → Etapa 3 (2FA, Supabase Auth MFA nativo) →
-Etapa 4 (panel admin sin depender del Excel) → Etapa 5 (notificaciones por
-email, bloqueada por el dominio de Resend) → Etapa 6 (marca de agua/HWM,
-**solo diseño con ejemplos numéricos antes de programar nada**) → Etapa 7
-(integración con broker, solo evaluación) → Etapa 8 (app mobile — **ya
-decidido: PWA**, no nativa).
+El rediseño visual (V0→V6) y la Etapa 3 (2FA) ya terminaron. Sigue: Fase 3
+Etapa 2 (Reportes PDF, con `@react-pdf/renderer`) → Etapa 4 (panel admin
+sin depender del Excel) → Etapa 5 (notificaciones por email, bloqueada por
+el dominio de Resend) → Etapa 6 (marca de agua/HWM, **solo diseño con
+ejemplos numéricos antes de programar nada**) → Etapa 7 (integración con
+broker, solo evaluación) → Etapa 8 (app mobile — **ya decidido: PWA**, no
+nativa).
+
+Fuera del roadmap de Fase 3, pendiente para lanzar con un cliente real:
+dominio propio (pausado, el usuario lo retoma más tarde) y el dominio de
+Resend para desbloquear SMTP real (Etapa 5).
 
 ## Reglas de seguridad del proyecto (no romper esto)
 
