@@ -53,6 +53,7 @@ export default async function AdminPage() {
 
   return (
     <div className="fade-up space-y-5">
+      <h1 className="sr-only">Panel administrador — Clientes</h1>
       <SectionCard title="Estado del fondo">
         {ultimaImportacion ? (
           <div className="space-y-1.5 text-[13.5px] text-muted-foreground">
