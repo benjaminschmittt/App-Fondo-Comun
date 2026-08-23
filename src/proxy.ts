@@ -68,7 +68,17 @@ export async function proxy(request: NextRequest) {
   // pidiera el codigo de 2FA una y otra vez, bloqueando en la practica
   // cualquier accion de admin (bug real visto en produccion). El
   // middleware si puede persistir cookies de forma confiable.
-  if (user && isAdminRoute && user.app_metadata?.role === "admin") {
+  // mfaExempt: excepcion puntual, pedida explicitamente por el dueño del
+  // proyecto para una cuenta admin especifica (no un email hardcodeado
+  // aca — vive en app_metadata de esa cuenta, solo la service_role key
+  // puede setearlo). Usar con criterio: cada cuenta exenta es una cuenta
+  // sin la segunda capa de defensa sobre datos financieros reales.
+  if (
+    user &&
+    isAdminRoute &&
+    user.app_metadata?.role === "admin" &&
+    !user.app_metadata?.mfaExempt
+  ) {
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal && aal.currentLevel !== aal.nextLevel) {
       return redirectTo("/verificar-2fa");
