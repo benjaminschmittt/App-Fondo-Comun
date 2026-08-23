@@ -10,7 +10,7 @@ export const FONDO_DATA_TAG = "fondo-data";
 // expone seleccion de fondo. Hasta que exista esa UI, toda la app apunta
 // al fondo default: el primero activo, mas antiguo. Nunca un id
 // hardcodeado — se resuelve por consulta cada vez.
-async function getDefaultFundId(): Promise<string> {
+export async function getDefaultFundId(): Promise<string> {
   const fund = await prisma.fund.findFirst({
     where: { activo: true },
     orderBy: { createdAt: "asc" },

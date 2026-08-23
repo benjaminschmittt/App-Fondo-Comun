@@ -12,11 +12,14 @@ export type PuntoEvolucion = {
   valorInversion: number;
 };
 
-function dayKey(d: Date): string {
+// Exportados (no solo para este archivo): src/lib/comisiones.ts los
+// reusa para no duplicar la logica de "a que dia calendario pertenece
+// una fecha" entre el dashboard y el motor de comision de performance.
+export function dayKey(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-function navPorFecha(navSeries: NavPoint[]): Map<string, number> {
+export function navPorFecha(navSeries: NavPoint[]): Map<string, number> {
   const map = new Map<string, number>();
   for (const p of navSeries) map.set(dayKey(p.fecha), p.valorCuotaparte);
   return map;

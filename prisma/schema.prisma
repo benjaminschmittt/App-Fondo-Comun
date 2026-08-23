@@ -26,6 +26,26 @@ enum ImportStatus {
   error
 }
 
+enum FeePeriodStatus {
+  draft
+  calculated
+  applied
+  cancelled
+}
+
+enum FeeCalculationStatus {
+  draft
+  approved
+  skipped
+  applied
+}
+
+// Abierto a proposito a mas valores a futuro (ej. "adjustment", "manual")
+// sin implementarlos todavia — ver diseño del modulo de comisiones.
+enum ShareTransferType {
+  performance_fee
+}
+
 // Un fondo. Fase 1-2 asumian un solo fondo implicito; a partir de Fase 3
 // el esquema es multi-fondo, pero la UI todavia no lo expone (todo sigue
 // apuntando al "Fondo Principal" sembrado en la migracion). Ver Etapa 1
@@ -42,6 +62,13 @@ model Fund {
   positions   Position[]
   movements   ClientMovement[]
   clientFunds ClientFund[]
+  documents   FundDocument[]
+
+  managerAccount  ManagerAccount?
+  highWaterMarks  ClientHighWaterMark[]
+  feePeriods      FeePeriod[]
+  feeCalculations PerformanceFeeCalculation[]
+  shareTransfers  ShareTransfer[]
 
   @@map("funds")
 }
@@ -59,6 +86,10 @@ model Client {
 
   movements   ClientMovement[]
   clientFunds ClientFund[]
+
+  highWaterMarks  ClientHighWaterMark[]
+  feeCalculations PerformanceFeeCalculation[]
+  shareTransfers  ShareTransfer[]
 
   @@map("clients")
 }
@@ -144,16 +175,179 @@ model ClientMovement {
   @@map("client_movements")
 }
 
+// PDFs de la cuenta de inversion (banco/broker) que el admin sube como
+// respaldo de transparencia. A nivel FONDO (no por cliente): todos los
+// clientes del mismo fondo ven los mismos documentos. El archivo en si
+// vive en Supabase Storage (bucket privado, ver src/data/documentos.ts);
+// esta tabla es solo metadata. Solo el backend escribe (admin sube/borra
+// via Server Action) — RLS permite SELECT a clientes del fondo.
+model FundDocument {
+  id             String   @id @default(uuid()) @db.Uuid
+  fundId         String   @map("fund_id") @db.Uuid
+  fund           Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  nombre         String
+  storagePath    String   @map("storage_path")
+  tamanioBytes   Int      @map("tamanio_bytes")
+  contentType    String   @map("content_type")
+  subidoPorId    String   @map("subido_por_id") @db.Uuid
+  subidoPorEmail String   @map("subido_por_email")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([fundId, createdAt])
+  @@map("fund_documents")
+}
+
+// ============================================================
+// Comision de performance con marca de agua (high-water mark).
+// Ver el diseño financiero completo (metodologia, casos especiales,
+// ejemplos numericos) en la conversacion de diseño de este modulo antes
+// de tocar cualquiera de estas tablas. Logica de calculo pura en
+// src/lib/comisiones.ts — estas tablas son solo persistencia/flujo de
+// revision manual, nunca calculan nada por su cuenta.
+// ============================================================
+
+// Cuenta interna del gestor/administrador que recibe las cuotapartes de
+// comision de performance. Una por fondo. Deliberadamente NO es un
+// Client (nunca inicia sesion, nunca debe aparecer en pantallas ni
+// listados de clientes) — sus cuotapartes se derivan sumando
+// ShareTransfer, igual que el resto del sistema deriva en vez de
+// guardar. Sin RLS para "authenticated": de uso exclusivo del backend.
+model ManagerAccount {
+  id        String   @id @default(uuid()) @db.Uuid
+  fundId    String   @unique @map("fund_id") @db.Uuid
+  fund      Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  nombre    String   @default("Gestor del fondo")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  shareTransfers ShareTransfer[]
+
+  @@map("manager_accounts")
+}
+
+// Marca de agua VIGENTE de un cliente en un fondo (el estado actual, no
+// historico — el historico completo de cada ajuste vive en
+// PerformanceFeeCalculation, una fila por periodo calculado). Se
+// actualiza SOLO cuando se aplica un cobro confirmado, nunca en un
+// calculo en borrador. Sin RLS para "authenticated": de uso exclusivo
+// del backend, el cliente nunca ve su propia marca de agua.
+model ClientHighWaterMark {
+  id                 String     @id @default(uuid()) @db.Uuid
+  clientId           String     @map("client_id") @db.Uuid
+  client             Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  fundId             String     @map("fund_id") @db.Uuid
+  fund               Fund       @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  highWaterMarkValue Decimal    @map("high_water_mark_value") @db.Decimal(18, 2)
+  highWaterMarkDate  DateTime   @map("high_water_mark_date") @db.Date
+  highWaterMarkNav   Decimal    @map("high_water_mark_nav") @db.Decimal(18, 6)
+  sharesAtHwm        Decimal    @map("shares_at_hwm") @db.Decimal(18, 6)
+  lastFeePeriodId    String?    @map("last_fee_period_id") @db.Uuid
+  lastFeePeriod      FeePeriod? @relation(fields: [lastFeePeriodId], references: [id])
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+
+  @@unique([clientId, fundId])
+  @@map("client_high_water_marks")
+}
+
+// Un periodo de calculo de comision (ej. "Q3 2026"). El admin lo crea,
+// dispara el calculo (llena PerformanceFeeCalculation en borrador),
+// revisa cliente por cliente, y recien despues aplica — nunca se cobra
+// nada automaticamente. Sin RLS para "authenticated": trabajo interno
+// del admin, el cliente nunca ve periodos ni borradores.
+model FeePeriod {
+  id          String          @id @default(uuid()) @db.Uuid
+  fundId      String          @map("fund_id") @db.Uuid
+  fund        Fund            @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  periodStart DateTime        @map("period_start") @db.Date
+  periodEnd   DateTime        @map("period_end") @db.Date
+  feeRate     Decimal         @map("fee_rate") @db.Decimal(5, 4)
+  status      FeePeriodStatus @default(draft)
+  createdBy   String          @map("created_by") @db.Uuid
+  approvedBy  String?         @map("approved_by") @db.Uuid
+  createdAt   DateTime        @default(now()) @map("created_at")
+  appliedAt   DateTime?       @map("applied_at")
+
+  calculations   PerformanceFeeCalculation[]
+  highWaterMarks ClientHighWaterMark[]
+
+  @@map("fee_periods")
+}
+
+// El calculo SUGERIDO de comision para un cliente en un periodo — nace
+// en "draft" al calcular, el admin lo aprueba o excluye, y solo se
+// escribe de verdad (ShareTransfer + ClientHighWaterMark) cuando pasa a
+// "applied" dentro de la transaccion de aplicar el periodo completo.
+// Guarda TODO lo que el admin necesita revisar antes de confirmar — ver
+// diseño, seccion "Revision manual". Sin RLS para "authenticated".
+model PerformanceFeeCalculation {
+  id                    String               @id @default(uuid()) @db.Uuid
+  feePeriodId           String               @map("fee_period_id") @db.Uuid
+  feePeriod             FeePeriod            @relation(fields: [feePeriodId], references: [id], onDelete: Cascade)
+  clientId              String               @map("client_id") @db.Uuid
+  client                Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  fundId                String               @map("fund_id") @db.Uuid
+  fund                  Fund                 @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  status                FeeCalculationStatus @default(draft)
+  clientSharesBefore    Decimal              @map("client_shares_before") @db.Decimal(18, 6)
+  currentValue          Decimal              @map("current_value") @db.Decimal(18, 2)
+  previousHighWaterMark Decimal              @map("previous_high_water_mark") @db.Decimal(18, 2)
+  adjustedHighWaterMark Decimal              @map("adjusted_high_water_mark") @db.Decimal(18, 2)
+  gainAboveHwm          Decimal              @map("gain_above_hwm") @db.Decimal(18, 2)
+  feeRate               Decimal              @map("fee_rate") @db.Decimal(5, 4)
+  feeAmount             Decimal              @map("fee_amount") @db.Decimal(18, 2)
+  navPerShare           Decimal              @map("nav_per_share") @db.Decimal(18, 6)
+  sharesToTransfer      Decimal              @map("shares_to_transfer") @db.Decimal(18, 6)
+  clientSharesAfter     Decimal              @map("client_shares_after") @db.Decimal(18, 6)
+  managerSharesBefore   Decimal              @map("manager_shares_before") @db.Decimal(18, 6)
+  managerSharesAfter    Decimal              @map("manager_shares_after") @db.Decimal(18, 6)
+  calculatedAt          DateTime             @default(now()) @map("calculated_at")
+  approvedAt            DateTime?            @map("approved_at")
+  appliedAt             DateTime?            @map("applied_at")
+  notes                 String?
+
+  shareTransfer ShareTransfer?
+
+  @@unique([feePeriodId, clientId])
+  @@map("performance_fee_calculations")
+}
+
+// El movimiento REAL de cuotapartes cliente -> gestor, creado solo al
+// aplicar un PerformanceFeeCalculation aprobado. Deliberadamente NO es
+// un ClientMovement (ver diseño: mezclarlo ahi corromperia
+// aportesNetos()/tirAnualizada(), que asumen que todo movimiento es
+// capital real). RLS: SI tiene politica de SELECT para "authenticated"
+// (el cliente puede ver sus propios cobros en el dashboard).
+model ShareTransfer {
+  id               String                    @id @default(uuid()) @db.Uuid
+  fundId           String                    @map("fund_id") @db.Uuid
+  fund             Fund                      @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  clientId         String                    @map("client_id") @db.Uuid
+  client           Client                    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  managerAccountId String                    @map("manager_account_id") @db.Uuid
+  managerAccount   ManagerAccount            @relation(fields: [managerAccountId], references: [id], onDelete: Cascade)
+  shares           Decimal                   @db.Decimal(18, 6)
+  navPerShare      Decimal                   @map("nav_per_share") @db.Decimal(18, 6)
+  moneyEquivalent  Decimal                   @map("money_equivalent") @db.Decimal(18, 2)
+  transferType     ShareTransferType         @default(performance_fee) @map("transfer_type")
+  feeCalculationId String                    @unique @map("fee_calculation_id") @db.Uuid
+  feeCalculation   PerformanceFeeCalculation @relation(fields: [feeCalculationId], references: [id])
+  createdBy        String                    @map("created_by") @db.Uuid
+  createdAt        DateTime                  @default(now()) @map("created_at")
+
+  @@index([clientId, createdAt])
+  @@index([fundId, createdAt])
+  @@map("share_transfers")
+}
+
 // Auditoria de cada importacion de Excel: quien, cuando, resultado.
 model ImportBatch {
-  id              String       @id @default(uuid()) @db.Uuid
-  archivoNombre   String       @map("archivo_nombre")
-  importadoPorId  String       @map("importado_por_id") @db.Uuid
-  importadoPorEmail String     @map("importado_por_email")
-  importadoEn     DateTime     @default(now()) @map("importado_en")
-  filasProcesadas Int          @map("filas_procesadas")
-  estado          ImportStatus
-  detalle         Json?
+  id                String       @id @default(uuid()) @db.Uuid
+  archivoNombre     String       @map("archivo_nombre")
+  importadoPorId    String       @map("importado_por_id") @db.Uuid
+  importadoPorEmail String       @map("importado_por_email")
+  importadoEn       DateTime     @default(now()) @map("importado_en")
+  filasProcesadas   Int          @map("filas_procesadas")
+  estado            ImportStatus
+  detalle           Json?
 
   @@map("import_batches")
 }
@@ -163,14 +357,14 @@ model ImportBatch {
 // quien, que accion, sobre que entidad, y el detalle. De solo-lectura desde
 // el resto de la app (nadie edita ni borra filas de auditoria).
 model AuditLog {
-  id           String   @id @default(uuid()) @db.Uuid
-  actorId      String   @map("actor_id") @db.Uuid
-  actorEmail   String   @map("actor_email")
-  accion       String
-  entidad      String?
-  entidadId    String?  @map("entidad_id")
-  detalle      Json?
-  creadoEn     DateTime @default(now()) @map("creado_en")
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String   @map("actor_id") @db.Uuid
+  actorEmail String   @map("actor_email")
+  accion     String
+  entidad    String?
+  entidadId  String?  @map("entidad_id")
+  detalle    Json?
+  creadoEn   DateTime @default(now()) @map("creado_en")
 
   @@index([creadoEn])
   @@index([actorId])

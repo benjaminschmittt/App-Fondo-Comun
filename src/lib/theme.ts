@@ -40,5 +40,17 @@ const MESES = [
 export const fechaCorta = (d: Date) =>
   `${MESES[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(2)}`;
 
+export const bytes = (n: number) => {
+  if (n < 1024) return `${n} B`;
+  const unidades = ["KB", "MB", "GB"];
+  let v = n / 1024;
+  let i = 0;
+  while (v >= 1024 && i < unidades.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  return `${v.toFixed(1)} ${unidades[i]}`;
+};
+
 export const fechaLarga = (d: Date) =>
   d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });

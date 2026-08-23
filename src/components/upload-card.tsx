@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { FileSpreadsheet, UploadCloud } from "lucide-react";
+import { FileSpreadsheet, UploadCloud, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function UploadCard({
@@ -9,11 +9,17 @@ export function UploadCard({
   accept,
   required,
   disabled,
+  title = "Arrastrá tu archivo Excel aquí",
+  hint = "o hacé click para elegirlo — solo .xlsx",
+  selectedIcon: SelectedIcon = FileSpreadsheet,
 }: {
   name: string;
   accept?: string;
   required?: boolean;
   disabled?: boolean;
+  title?: string;
+  hint?: string;
+  selectedIcon?: LucideIcon;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -64,7 +70,7 @@ export function UploadCard({
       />
       {fileName ? (
         <>
-          <FileSpreadsheet className="size-7 text-accent" />
+          <SelectedIcon className="size-7 text-accent" />
           <div className="text-sm font-medium text-foreground">{fileName}</div>
           <div className="text-xs text-muted-foreground">
             Click o arrastrá otro archivo para cambiarlo
@@ -73,12 +79,8 @@ export function UploadCard({
       ) : (
         <>
           <UploadCloud className="size-7 text-muted-foreground" />
-          <div className="text-sm font-medium text-foreground">
-            Arrastrá tu archivo Excel aquí
-          </div>
-          <div className="text-xs text-muted-foreground">
-            o hacé click para elegirlo — solo .xlsx
-          </div>
+          <div className="text-sm font-medium text-foreground">{title}</div>
+          <div className="text-xs text-muted-foreground">{hint}</div>
         </>
       )}
     </div>

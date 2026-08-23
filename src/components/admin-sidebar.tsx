@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, UploadCloud, Users } from "lucide-react";
+import { FileText, LogOut, Percent, UploadCloud, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,8 @@ import { logout } from "@/app/actions";
 const NAV_ITEMS = [
   { href: "/admin", label: "Clientes", icon: Users },
   { href: "/admin/importar", label: "Importar Excel", icon: UploadCloud },
+  { href: "/admin/documentos", label: "Documentos", icon: FileText },
+  { href: "/admin/comisiones", label: "Comisiones", icon: Percent },
 ];
 
 export function AdminShell({

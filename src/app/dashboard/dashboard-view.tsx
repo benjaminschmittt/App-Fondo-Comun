@@ -16,7 +16,7 @@ import {
   Bar,
 } from "recharts";
 import { TrendingUp, Wallet, Layers, PiggyBank } from "lucide-react";
-import { CHART_COLORS, money, pct, numero, fechaCorta } from "@/lib/theme";
+import { CHART_COLORS, money, pct, numero, fechaCorta, fechaLarga, bytes } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { MetricCard } from "@/components/metric-card";
 import { SectionCard } from "@/components/section-card";
@@ -24,6 +24,8 @@ import { ChartCard, chartAxisTick, chartGridProps, chartTooltipStyle } from "@/c
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import type { MiInversion } from "@/data/inversion";
+import type { listarDocumentosCliente } from "@/data/documentos";
+import { DocumentDownloadButton } from "./document-download-button";
 
 function RendimientoStat({ label, valor }: { label: string; valor: number | null }) {
   const toneClass =
@@ -47,8 +49,15 @@ function RendimientoStat({ label, valor }: { label: string; valor: number | null
 
 type Posicion = MiInversion["fondo"]["positions"][number];
 type Movimiento = MiInversion["movimientos"][number];
+type Documento = Awaited<ReturnType<typeof listarDocumentosCliente>>[number];
 
-export function DashboardView({ data }: { data: MiInversion }) {
+export function DashboardView({
+  data,
+  documentos,
+}: {
+  data: MiInversion;
+  documentos: Documento[];
+}) {
   const [breakdown, setBreakdown] = useState<"tipo" | "sector">("tipo");
 
   const nav = data.fondo.navSeries;
@@ -144,6 +153,31 @@ export function DashboardView({ data }: { data: MiInversion }) {
       header: "Cuotapartes",
       align: "right",
       render: (mv) => <span className="text-muted-foreground">{numero(mv.cuotapartes)}</span>,
+    },
+  ];
+
+  const documentColumns: DataTableColumn<Documento>[] = [
+    {
+      key: "nombre",
+      header: "Nombre",
+      render: (d) => <span className="font-semibold text-foreground">{d.nombre}</span>,
+    },
+    {
+      key: "fecha",
+      header: "Fecha",
+      render: (d) => <span className="text-muted-foreground">{fechaLarga(d.createdAt)}</span>,
+    },
+    {
+      key: "tamanio",
+      header: "Tamaño",
+      align: "right",
+      render: (d) => <span className="text-muted-foreground">{bytes(d.tamanioBytes)}</span>,
+    },
+    {
+      key: "accion",
+      header: "",
+      align: "right",
+      render: (d) => <DocumentDownloadButton id={d.id} nombre={d.nombre} />,
     },
   ];
 
@@ -363,6 +397,16 @@ export function DashboardView({ data }: { data: MiInversion }) {
           />
         </SectionCard>
       </div>
+
+      <SectionCard title="Documentos" className="mt-5">
+        <DataTable
+          columns={documentColumns}
+          rows={documentos}
+          rowKey={(d) => d.id}
+          emptyTitle="Sin documentos"
+          emptyDescription="Todavía no hay documentos de respaldo cargados para este fondo."
+        />
+      </SectionCard>
 
       <div className="mt-7 text-center text-[11.5px] leading-relaxed text-muted-foreground">
         El rendimiento del fondo es Time-Weighted Return (TWR): no lo afectan los aportes/retiros de
