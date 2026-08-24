@@ -15,7 +15,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { TrendingUp, Wallet, Layers, PiggyBank } from "lucide-react";
+import { TrendingUp, Wallet, Layers, PiggyBank, FileDown } from "lucide-react";
 import { CHART_COLORS, money, pct, numero, fechaCorta, fechaLarga, bytes } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { MetricCard } from "@/components/metric-card";
@@ -23,6 +23,7 @@ import { SectionCard } from "@/components/section-card";
 import { ChartCard, chartAxisTick, chartGridProps, chartTooltipStyle } from "@/components/chart-card";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
+import { Button } from "@/components/ui/button";
 import type { MiInversion } from "@/data/inversion";
 import type { listarDocumentosCliente } from "@/data/documentos";
 import type { listarCobrosFeeCliente } from "@/data/comisiones";
@@ -212,6 +213,13 @@ export function DashboardView({
   return (
     <main className="fade-up mx-auto max-w-[1160px] px-5 py-6 md:px-8">
       <h1 className="sr-only">Tu inversión</h1>
+      <div className="mb-4 flex justify-end">
+        <Button variant="outline" size="sm" className="gap-1.5" asChild>
+          <a href="/dashboard/reporte" download>
+            <FileDown size={14} /> Descargar reporte
+          </a>
+        </Button>
+      </div>
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           variant="hero"
