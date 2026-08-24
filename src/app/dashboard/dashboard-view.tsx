@@ -25,6 +25,7 @@ import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import type { MiInversion } from "@/data/inversion";
 import type { listarDocumentosCliente } from "@/data/documentos";
+import type { listarCobrosFeeCliente } from "@/data/comisiones";
 import { DocumentDownloadButton } from "./document-download-button";
 
 function RendimientoStat({ label, valor }: { label: string; valor: number | null }) {
@@ -50,13 +51,16 @@ function RendimientoStat({ label, valor }: { label: string; valor: number | null
 type Posicion = MiInversion["fondo"]["positions"][number];
 type Movimiento = MiInversion["movimientos"][number];
 type Documento = Awaited<ReturnType<typeof listarDocumentosCliente>>[number];
+type CobroFee = Awaited<ReturnType<typeof listarCobrosFeeCliente>>[number];
 
 export function DashboardView({
   data,
   documentos,
+  cobrosFee,
 }: {
   data: MiInversion;
   documentos: Documento[];
+  cobrosFee: CobroFee[];
 }) {
   const [breakdown, setBreakdown] = useState<"tipo" | "sector">("tipo");
 
@@ -178,6 +182,30 @@ export function DashboardView({
       header: "",
       align: "right",
       render: (d) => <DocumentDownloadButton id={d.id} nombre={d.nombre} />,
+    },
+  ];
+
+  const feeColumns: DataTableColumn<CobroFee>[] = [
+    {
+      key: "periodo",
+      header: "Período",
+      render: (c) => (
+        <span className="font-semibold text-foreground">
+          Comisión de performance — {fechaCorta(c.periodoInicio)} a {fechaCorta(c.periodoFin)}
+        </span>
+      ),
+    },
+    {
+      key: "monto",
+      header: "Monto",
+      align: "right",
+      render: (c) => money(c.monto),
+    },
+    {
+      key: "cuotapartes",
+      header: "Cuotapartes descontadas",
+      align: "right",
+      render: (c) => <span className="text-muted-foreground">{numero(c.cuotapartes)}</span>,
     },
   ];
 
@@ -407,6 +435,12 @@ export function DashboardView({
           emptyDescription="Todavía no hay documentos de respaldo cargados para este fondo."
         />
       </SectionCard>
+
+      {cobrosFee.length > 0 && (
+        <SectionCard title="Comisiones" className="mt-5">
+          <DataTable columns={feeColumns} rows={cobrosFee} rowKey={(c) => c.id} />
+        </SectionCard>
+      )}
 
       <div className="mt-7 text-center text-[11.5px] leading-relaxed text-muted-foreground">
         El rendimiento del fondo es Time-Weighted Return (TWR): no lo afectan los aportes/retiros de
