@@ -28,13 +28,22 @@ proyecto, desplegado en Vercel.
 
 - **En producción:** https://app-fondo-comun-weld.vercel.app — funcionando.
 - **Datos:** son de PRUEBA — 3 clientes de ejemplo (Juan Perez, Maria
-  Gonzalez, Carlos Diaz) del archivo `docs/fondo-archivo-madre-ejemplo.xlsx`.
-  El fondo real todavia no tiene numeros reales cargados.
+  Gonzalez, Carlos Diaz) del archivo `docs/fondo-archivo-madre-ejemplo.xlsx`,
+  mas 10 clientes ficticios (`CLI-T01`..`CLI-T10`, emails `@prueba-carga.test`)
+  agregados para probar carga/concurrencia y el modulo de comisiones — todos
+  vinculados al mismo "Fondo Principal". El fondo real todavia no tiene
+  numeros reales cargados. **A Maria Gonzalez (CLI-0002) ya se le aplico un
+  cobro de comision de performance real** (a proposito, queda como ejemplo
+  vivo para demos — ver Fase 3 Etapa 6 mas abajo): su valor de inversion
+  correcto es ~$214.653 (no ~$224.753, que era el valor pre-cobro).
 - **Repo:** https://github.com/benjaminschmittt/App-Fondo-Comun (rama `main`,
   deploy automatico a Vercel en cada push).
 - **Credenciales de prueba:**
   - Admin: `benjaminschmittt@gmail.com` / `Fondo1787171927Aa!`
   - Cliente: `juan@ejemplo.com` / `Cliente1787172213Aa!`
+  - Segundo admin: `martin.schleicher@gmail.com` — cuenta creada con
+    `app_metadata.mfaExempt: true` (ver Fase 3 Etapa 3 mas abajo), invitado
+    por email, pendiente de que complete su primer login y ponga contraseña.
 - **SMTP:** todavia usa el servicio de email por defecto de Supabase (muy
   limitado, ~2-4 emails/hora). El usuario creo una cuenta en Resend pero
   decidio no verificar un dominio todavia, asi que sigue pendiente — no
@@ -91,17 +100,58 @@ proyecto, desplegado en Vercel.
   enrolar de cero, con el celular del usuario. Vía de escape si pierde el
   celular: borrar el factor desde el dashboard de Supabase (Authentication
   → Users → el usuario → MFA) o con `supabase.auth.admin.mfa.deleteFactor`
-  usando el `service_role`.
+  usando el `service_role`. **Extensión:** `proxy.ts` respeta
+  `user.app_metadata?.mfaExempt === true` para eximir cuentas admin
+  puntuales del chequeo de AAL (pedido explícito del usuario para la cuenta
+  de Martín — nunca un email hardcodeado en el código, es un flag por
+  cuenta, seteable solo con la `service_role` key). Usar con criterio.
+- **Documentos del fondo:** el admin sube PDFs de respaldo de la cuenta de
+  inversión (banco/broker) en `/admin/documentos`; los clientes del mismo
+  fondo los ven y descargan en su dashboard vía URL firmada (bucket privado
+  `fund-documents` en Supabase Storage, sin políticas RLS de storage —
+  toda subida/descarga pasa por el servidor con la `service_role` key). Tabla
+  `fund_documents` (solo metadata). No es a nivel cliente, es a nivel fondo.
+- **Fase 3, Etapa 6 (comisión de performance / marca de agua): completa**,
+  no solo diseñada — schema (`ManagerAccount`, `ClientHighWaterMark`,
+  `FeePeriod`, `PerformanceFeeCalculation`, `ShareTransfer`), módulo de
+  cálculo puro con 15 tests (`src/lib/comisiones.ts`), capa de datos
+  (`src/data/comisiones.ts`) y pantallas admin (`/admin/comisiones`:
+  crear período → calcular → aprobar/excluir por cliente → confirmar y
+  aplicar, con diálogo de confirmación propio, nunca `confirm()` nativo —
+  ver Gotchas). El cobro se paga en cuotapartes, nunca en efectivo, y
+  **nunca pasa por `ClientMovement`** (viven en `ShareTransfer`, separado a
+  propósito para no corromper `aportesNetos()`/`tirAnualizada()`). Probado
+  de punta a punta contra la base real (crear→calcular→aprobar→aplicar→
+  idempotencia) y verificado a nivel RLS con roles simulados por SQL.
+  **Importante:** `calcularInversion()` en `src/data/inversion.ts` (usada
+  por el dashboard del cliente Y por los reportes PDF) resta las
+  cuotapartes transferidas por fee — si algún cálculo nuevo de "cuotapartes
+  actuales de un cliente" no pasa por ahí o por
+  `cuotapartesTransferidasHasta()` en `src/lib/comisiones.ts`, va a mostrar
+  el valor de ANTES del cobro (bug real que ya se encontró y corrigió una
+  vez, no lo reintroduzcas).
+- **Fase 3, Etapa 2 (reportes PDF):** botón "Descargar reporte" en el
+  dashboard del cliente (`GET /dashboard/reporte`) y generación individual
+  o masiva (ZIP con `jszip`) desde `/admin`, con columna "Último reporte"
+  leída de `audit_log` (sin tabla propia). `src/lib/pdf/reporte-cliente.tsx`
+  con `@react-pdf/renderer`, reusa `calcularInversion()` — nunca recalcula
+  aparte. **v1 es un solo reporte con el historial completo**, no hay
+  todavía selector mensual/trimestral/anual (quedó pendiente si se quiere).
 
 ## Qué falta (ver el plan para el detalle etapa por etapa)
 
-El rediseño visual (V0→V6) y la Etapa 3 (2FA) ya terminaron. Sigue: Fase 3
-Etapa 2 (Reportes PDF, con `@react-pdf/renderer`) → Etapa 4 (panel admin
-sin depender del Excel) → Etapa 5 (notificaciones por email, bloqueada por
-el dominio de Resend) → Etapa 6 (marca de agua/HWM, **solo diseño con
-ejemplos numéricos antes de programar nada**) → Etapa 7 (integración con
-broker, solo evaluación) → Etapa 8 (app mobile — **ya decidido: PWA**, no
-nativa).
+El rediseño visual (V0→V6), la Etapa 2 (reportes PDF), la Etapa 3 (2FA) y
+la Etapa 6 (comisión de performance) ya terminaron. Sigue: Etapa 4 (panel
+admin sin depender del Excel) → Etapa 5 (notificaciones por email,
+bloqueada por el dominio de Resend) → Etapa 7 (integración con broker,
+solo evaluación) → Etapa 8 (app mobile — **ya decidido: PWA**, no nativa).
+
+Detalle menor pendiente de Etapa 6: no hay tests automatizados (Vitest)
+para las funciones que ESCRIBEN en la base (`calcularPeriodo`/
+`aplicarPeriodo` en `src/data/comisiones.ts`) — se verificaron a mano
+contra la base real una vez y funcionan, pero no hay una suite que corra
+sola para detectar una regresión futura. Es la misma política que ya usa
+el proyecto para RLS (verificación manual, no automática), no un olvido.
 
 Fuera del roadmap de Fase 3, pendiente para lanzar con un cliente real:
 dominio propio (pausado, el usuario lo retoma más tarde) y el dominio de
@@ -167,3 +217,39 @@ Resend para desbloquear SMTP real (Etapa 5).
   fuentes/paquetes que no pediste (ej. metio la fuente Geist en
   `layout.tsx` al inicializar) — revisar el diff despues de correr
   `shadcn add` o `shadcn init`, no asumir que solo tocó lo esperado.
+- **El servidor de dev (Turbopack) queda con el Prisma Client viejo en
+  memoria despues de cualquier cambio de schema** — aunque corras
+  `prisma generate`, el proceso YA corriendo no lo recoge (error tipico:
+  `Cannot read properties of undefined (reading 'findMany')`). Hay que
+  matar TODOS los procesos `node.exe` y borrar `.next/` antes de levantar
+  de nuevo — un restart del proceso solo (sin matar todo + borrar `.next`)
+  a veces no alcanza.
+- **La primera vez que Turbopack compila una ruta que importa una
+  dependencia pesada (ej. `@react-pdf/renderer`) puede tardar 10-22
+  segundos**, y mientras tanto OTRAS rutas del mismo server pueden
+  responder lento o quedarse mostrando el skeleton de carga — no es un
+  bug, es el costo de compilacion en frio (una sola vez por dependencia
+  nueva, no pasa en produccion). Si una pagina queda "trabada" despues de
+  instalar un paquete nuevo, esperar mas antes de asumir que algo se rompio.
+- **Los scripts de test standalone (`npx tsx algo.mts`) no pueden importar
+  nada que transitivamente traiga `@react-pdf/renderer`** (falla con
+  `ERR_PACKAGE_PATH_NOT_EXPORTED` en `@react-pdf/hyphenate` — tsx hace
+  interop CJS/ESM distinto a como lo hace Turbopack, que si funciona).
+  Tampoco pueden llamar `getFondoData()` (usa `unstable_cache` de
+  `next/cache`, necesita el runtime real de Next). Para probar logica que
+  depende de estas cosas desde un script, reimplementa la consulta en
+  linea (ver ejemplos ya descartados en el historial de commits) o probalo
+  contra el servidor de dev real.
+- **Para probar Server Actions/data functions que llaman `requireAdmin()`/
+  `requireClient()` desde un script** (no se puede simular una sesion real
+  de Next sin cookies): hacer una copia de seguridad de
+  `src/data/auth.ts`, reemplazarlo temporalmente por un stub que devuelva
+  un usuario fijo, correr el script, y restaurar el archivo original
+  apenas termine (`git diff --stat src/data/auth.ts` tiene que dar vacio
+  al final). Mismo truco para `server-only` si hace falta
+  (`node_modules/server-only/index.js` tira siempre — reemplazarlo por
+  `module.exports = {}` temporalmente).
+- Para conexiones a la base desde un script standalone (no la app),
+  `DATABASE_URL` (pooled, 6543) a veces no es alcanzable — usar
+  `DIRECT_URL` (5432) en su lugar, seteando `$env:DATABASE_URL` a ese
+  valor antes de correr el script por PowerShell.
