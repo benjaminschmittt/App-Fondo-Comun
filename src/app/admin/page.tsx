@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { getEmailsConCuenta } from "@/data/admin-users";
+import { ultimosReportesGenerados } from "@/data/reportes";
 import { fechaLarga } from "@/lib/theme";
 import { SectionCard } from "@/components/section-card";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { InviteButton } from "./invite-button";
+import { Button } from "@/components/ui/button";
+import { FileDown, FileStack } from "lucide-react";
 
 export const metadata: Metadata = { title: "Clientes" };
 
@@ -18,6 +21,7 @@ export default async function AdminPage() {
     prisma.client.findMany({ orderBy: { nombre: "asc" } }),
     getEmailsConCuenta(),
   ]);
+  const ultimosReportes = await ultimosReportesGenerados(clientes.map((c) => c.id));
 
   const columns: DataTableColumn<Cliente>[] = [
     { key: "id", header: "ID", render: (c) => <span className="text-muted-foreground">{c.clienteId}</span> },
@@ -39,6 +43,28 @@ export default async function AdminPage() {
           </StatusBadge>
         );
       },
+    },
+    {
+      key: "ultimoReporte",
+      header: "Último reporte",
+      render: (c) => {
+        const fecha = ultimosReportes.get(c.id);
+        return (
+          <span className="text-muted-foreground">{fecha ? fechaLarga(fecha) : "Nunca"}</span>
+        );
+      },
+    },
+    {
+      key: "reporte",
+      header: "",
+      align: "right",
+      render: (c) => (
+        <Button variant="outline" size="icon-sm" asChild aria-label={`Descargar reporte de ${c.nombre}`}>
+          <a href={`/admin/reportes/${c.id}`} download>
+            <FileDown />
+          </a>
+        </Button>
+      ),
     },
     {
       key: "accion",
@@ -79,7 +105,18 @@ export default async function AdminPage() {
         )}
       </SectionCard>
 
-      <SectionCard title={`Clientes (${clientes.length})`}>
+      <SectionCard
+        title={`Clientes (${clientes.length})`}
+        action={
+          clientes.length > 0 && (
+            <Button variant="outline" size="sm" className="gap-1.5" asChild>
+              <a href="/admin/reportes/masivo" download>
+                <FileStack size={14} /> Descargar todos los reportes
+              </a>
+            </Button>
+          )
+        }
+      >
         <DataTable
           columns={columns}
           rows={clientes}

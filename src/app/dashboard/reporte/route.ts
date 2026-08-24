@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/data/auth";
+import { requireUser, requireClient } from "@/data/auth";
 import { getMiInversion } from "@/data/inversion";
 import { registrarAuditoria } from "@/data/audit";
 import { generarReportePDF } from "@/lib/pdf/reporte-cliente";
 
 // getMiInversion() ya resuelve el cliente desde la sesion (requireClient()
 // por dentro) — un cliente nunca puede pedir el reporte de otro porque
-// nunca hay un id de cliente que venga del navegador.
+// nunca hay un id de cliente que venga del navegador. requireClient() se
+// vuelve a llamar aca (cacheado por React, no pega dos veces a la base)
+// solo para tener el id y poder auditar "ultimo reporte de ESTE cliente".
 export async function GET() {
-  const user = await requireUser();
-  const data = await getMiInversion();
+  const [user, client, data] = await Promise.all([requireUser(), requireClient(), getMiInversion()]);
   const generadoEn = new Date();
 
   const pdf = await generarReportePDF(data, generadoEn);
@@ -19,6 +20,7 @@ export async function GET() {
     actorEmail: user.email ?? "",
     accion: "generar_reporte_cliente",
     entidad: "client",
+    entidadId: client.id,
     detalle: { nombre: data.nombre },
   });
 
