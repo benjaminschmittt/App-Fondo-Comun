@@ -142,9 +142,30 @@ proyecto, desplegado en Vercel.
 
 El rediseño visual (V0→V6), la Etapa 2 (reportes PDF), la Etapa 3 (2FA) y
 la Etapa 6 (comisión de performance) ya terminaron. Sigue: Etapa 4 (panel
-admin sin depender del Excel) → Etapa 5 (notificaciones por email,
-bloqueada por el dominio de Resend) → Etapa 7 (integración con broker,
-solo evaluación) → Etapa 8 (app mobile — **ya decidido: PWA**, no nativa).
+admin sin depender del Excel — **ver "Etapa 4 intentada y revertida"
+abajo antes de reabrirla**) → Etapa 5 (notificaciones por email, bloqueada
+por el dominio de Resend) → Etapa 7 (integración con broker, solo
+evaluación) → Etapa 8 (app mobile — **ya decidido: PWA**, no nativa).
+
+**Etapa 4 intentada y revertida (2026-08-24):** se implementó un panel
+manual (`/admin/clientes|movimientos|posiciones|valuaciones|auditoria`,
+CRUD fila por fila) y se probó en producción (creación de cliente y
+edición de posición reales, ambas quedaron bien auditadas). Se revirtió
+(`git revert`, no `reset`, porque ya estaba pusheado) por una razón de
+diseño, no un bug: el importador de Excel hace **reemplazo total** de los
+movimientos de un cliente en un fondo cada vez que se reimporta un archivo
+que lo menciona (`src/lib/excel/import.ts` — borra todos sus
+`ClientMovement` y los recarga solo con lo que trae ese archivo). Un
+movimiento cargado a mano por el panel manual **desaparece sin aviso** la
+próxima vez que se sube un Excel que toque a ese mismo cliente — las dos
+vías de escritura no son compatibles tal como está armado el importador
+hoy. Si se retoma esta etapa, hay que resolver esa reconciliación primero
+(ej.: que el importador NO borre movimientos que no vinieron de un Excel,
+marcándolos con su origen; o aceptar que el panel manual solo cubra
+clientes/auditoría, secciones que no compiten con el importador). El
+cliente de prueba que quedó cargado en producción de esta prueba
+(`CLI-T99`, `test.claude.etapa4@prueba-carga.test`) no se borró — sigue en
+la tabla `clients`, sin cuenta de login (nunca se invitó).
 
 Detalle menor pendiente de Etapa 6: no hay tests automatizados (Vitest)
 para las funciones que ESCRIBEN en la base (`calcularPeriodo`/
