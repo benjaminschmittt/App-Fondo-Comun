@@ -476,3 +476,26 @@ export async function listarCobrosFeeCliente() {
     cuotapartes: t.shares.toNumber(),
   }));
 }
+
+// Guardrails para el panel admin manual (Fase 3, Etapa 4): editar/borrar un
+// movimiento o un NAV con fecha ya usada en un calculo de comision APLICADO
+// corromperia calcularInversion()/tirAnualizada() y los montos ya cobrados
+// (ver bug real ya corregido una vez, documentado en CLAUDE.md). Nunca
+// bloquean la creacion de un movimiento/NAV nuevo, solo edicion/baja.
+export async function movimientoAfectaComisionAplicada(
+  clientId: string,
+  fundId: string,
+  fecha: Date
+): Promise<boolean> {
+  const calc = await prisma.performanceFeeCalculation.findFirst({
+    where: { clientId, fundId, status: "applied", feePeriod: { periodEnd: { gte: fecha } } },
+  });
+  return calc !== null;
+}
+
+export async function fechaNavAfectaComisionAplicada(fundId: string, fecha: Date): Promise<boolean> {
+  const period = await prisma.feePeriod.findFirst({
+    where: { fundId, status: "applied", periodEnd: { gte: fecha } },
+  });
+  return period !== null;
+}

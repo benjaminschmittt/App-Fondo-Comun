@@ -8,8 +8,9 @@ import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { InviteButton } from "./invite-button";
+import { ClienteDialog } from "./cliente-dialog";
 import { Button } from "@/components/ui/button";
-import { FileDown, FileStack } from "lucide-react";
+import { FileDown, FileStack, Pencil, Plus } from "lucide-react";
 
 export const metadata: Metadata = { title: "Clientes" };
 
@@ -75,6 +76,21 @@ export default async function AdminPage() {
         return tieneCuenta ? null : <InviteButton email={c.email} />;
       },
     },
+    {
+      key: "editar",
+      header: "",
+      align: "right",
+      render: (c) => (
+        <ClienteDialog
+          cliente={{ id: c.id, clienteId: c.clienteId, nombre: c.nombre, email: c.email, activo: c.activo }}
+          trigger={
+            <Button variant="outline" size="icon-sm" aria-label={`Editar ${c.nombre}`}>
+              <Pencil />
+            </Button>
+          }
+        />
+      ),
+    },
   ];
 
   return (
@@ -108,13 +124,22 @@ export default async function AdminPage() {
       <SectionCard
         title={`Clientes (${clientes.length})`}
         action={
-          clientes.length > 0 && (
-            <Button variant="outline" size="sm" className="gap-1.5" asChild>
-              <a href="/admin/reportes/masivo" download>
-                <FileStack size={14} /> Descargar todos los reportes
-              </a>
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            {clientes.length > 0 && (
+              <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                <a href="/admin/reportes/masivo" download>
+                  <FileStack size={14} /> Descargar todos los reportes
+                </a>
+              </Button>
+            )}
+            <ClienteDialog
+              trigger={
+                <Button size="sm" className="gap-1.5">
+                  <Plus size={14} /> Nuevo cliente
+                </Button>
+              }
+            />
+          </div>
         }
       >
         <DataTable
