@@ -118,6 +118,40 @@ inversion, valor de mercado de cada posicion) se recalculan siempre en el codigo
 Excel nunca los declara directamente, para evitar que una formula desactualizada
 contamine los datos.
 
+## Auto-sync del Excel
+
+En vez de entrar al panel admin y subir el archivo cada vez, podés dejar corriendo un
+script que detecta cuando guardás el Excel de trabajo en tu compu y lo sube solo.
+
+1. **Generá un secreto** (cualquier string largo y random sirve), por ejemplo:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+2. **Completá en `.env.local`**: `AUTO_IMPORT_SECRET` (el que generaste),
+   `AUTO_IMPORT_ACTOR_ID` y `AUTO_IMPORT_ACTOR_EMAIL` (el UUID y el email de tu cuenta
+   admin — el UUID se ve en Supabase → Authentication → Users), `AUTO_IMPORT_FILE_PATH`
+   (la ruta al Excel real que editás, **no** `docs/fondo-archivo-madre-ejemplo.xlsx`,
+   que es solo el archivo de ejemplo) y `AUTO_IMPORT_URL` (`http://localhost:3000/api/importar-auto`
+   mientras probás).
+3. **Agregá el mismo `AUTO_IMPORT_SECRET`/`AUTO_IMPORT_ACTOR_ID`/`AUTO_IMPORT_ACTOR_EMAIL`
+   en Vercel** (Project Settings → Environment Variables) cuando quieras que apunte a
+   producción — cambiá `AUTO_IMPORT_URL` en tu `.env.local` a la URL real recién ahí.
+4. **Corré el watcher**:
+   ```bash
+   npm run watch:excel
+   ```
+   Queda mirando el archivo. Cada vez que lo guardás, lo sube y te imprime el resultado
+   en la consola (éxito con el resumen de filas, o el detalle del error si algo no
+   valida — en ese caso no se toca la base, igual que si lo hubieras subido a mano y
+   fallara). Dejalo corriendo mientras trabajás en el Excel; si cerrás la terminal, se
+   corta el auto-sync (podés configurarlo para que arranque solo con Windows si querés
+   que sea permanente).
+
+El endpoint (`src/app/api/importar-auto`) no usa sesión de admin — se protege con el
+secreto compartido, comparado de forma segura contra timing attacks. Tratá
+`AUTO_IMPORT_SECRET` con la misma seriedad que `SUPABASE_SERVICE_ROLE_KEY`: quien lo
+tenga puede cargar datos al fondo real.
+
 ## Seguridad
 
 - El frontend nunca decide que puede ver un usuario. Toda autorizacion se resuelve en
@@ -142,6 +176,7 @@ contamine los datos.
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
    - `DATABASE_URL`, `DIRECT_URL`
    - `NEXT_PUBLIC_SITE_URL` — la URL publica de produccion (ej. `https://tu-dominio.com`), la usan los emails de invitacion/recuperacion de contraseña.
+   - `AUTO_IMPORT_SECRET`, `AUTO_IMPORT_ACTOR_ID`, `AUTO_IMPORT_ACTOR_EMAIL` — solo si usás el auto-sync del Excel (ver esa sección más arriba). `AUTO_IMPORT_FILE_PATH`/`AUTO_IMPORT_URL` NO van acá, son solo del watcher local.
 4. En **Supabase → Authentication → URL Configuration**, agregá la URL de produccion a
    "Redirect URLs" (necesario para que los links de invitacion/recuperacion funcionen).
 5. Deploy. Las migraciones NO corren automaticamente en Vercel — corré
