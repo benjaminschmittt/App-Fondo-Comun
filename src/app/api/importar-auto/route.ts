@@ -18,10 +18,34 @@ function secretoValido(recibido: string | null): boolean {
   return timingSafeEqual(a, b);
 }
 
+// Limite simple de intentos fallidos, best-effort: vive en memoria del
+// proceso de la funcion serverless, asi que se resetea en cada cold
+// start y no es compartido entre instancias concurrentes de Vercel — no
+// es una defensa fuerte (el secreto de 256 bits ya lo es), es solo para
+// no procesar en loop un cliente roto o alguien golpeando el endpoint a
+// ciegas.
+const VENTANA_MS = 60_000;
+const MAX_FALLOS = 5;
+let fallos: number[] = [];
+
+function demasiadosFallos(): boolean {
+  const ahora = Date.now();
+  fallos = fallos.filter((t) => ahora - t < VENTANA_MS);
+  return fallos.length >= MAX_FALLOS;
+}
+
 export async function POST(request: Request) {
+  if (demasiadosFallos()) {
+    return NextResponse.json(
+      { ok: false, error: "Demasiados intentos fallidos, esperá un minuto." },
+      { status: 429 }
+    );
+  }
+
   const auth = request.headers.get("authorization");
   const recibido = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
   if (!secretoValido(recibido)) {
+    fallos.push(Date.now());
     return NextResponse.json({ ok: false, error: "No autorizado." }, { status: 401 });
   }
 
